@@ -51,6 +51,13 @@ class VerifierConfig:
     image_max_side: int = 512  # downscale before upload to cut latency
     cameras: list[str] = field(default_factory=lambda: ["front", "left_wrist", "right_wrist"])
     temperature: float = 0.0
+    # Our reply is a tiny JSON ({"answer", "reason"}). Providers like Groq
+    # reserve max_tokens against an output-tokens-per-minute budget (free
+    # tier: 1000 OTPM on qwen/qwen3.8-27b), so leaving it unset fails with 429.
+    max_tokens: int = 150
+    # Provider-specific fields merged into the request body, e.g. to turn off
+    # a model's thinking output: {"reasoning_effort": "none"} on Groq.
+    extra_body: dict = field(default_factory=dict)
 
 
 @dataclass

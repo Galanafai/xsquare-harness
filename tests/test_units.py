@@ -322,3 +322,15 @@ def test_verifier_sends_user_agent_and_reports_http_error_body(monkeypatch):
     verdict = asyncio.run(Verifier(cfg).check("t.s", "q?", {"observation": {"images": {}}}))
     assert seen["ua"] == USER_AGENT
     assert verdict.answer == "unsure" and "1010" in verdict.error
+
+
+def test_verifier_body_caps_output_and_merges_extra_fields():
+    """Groq reserves max_tokens against a 1000 output-tokens-per-minute free tier."""
+    from xharness.config import VerifierConfig
+    from xharness.verifier import Verifier
+
+    cfg = VerifierConfig(chat_url="u", model="m", cameras=[], max_tokens=120,
+                         extra_body={"reasoning_effort": "none"})
+    body = Verifier(cfg)._build_body("t.s", "q?", {"observation": {"images": {}}}, "")
+    assert body["max_tokens"] == 120
+    assert body["reasoning_effort"] == "none"

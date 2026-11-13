@@ -26,6 +26,8 @@ verifier:
   timeout_s: 8
   image_max_side: 512
   cameras: [front, left_wrist, right_wrist]
+  max_tokens: 150               # reply is tiny JSON; Groq free tier caps output tokens per minute
+  extra_body: {}                # e.g. {reasoning_effort: none} to turn off thinking on Groq Qwen
 
 supervisor:
   verify_every: 2               # vision check every 2nd Wall-X request

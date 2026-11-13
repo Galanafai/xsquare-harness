@@ -151,14 +151,17 @@ class Verifier:
             small = downscale_jpeg_b64(images[cam], self.cfg.image_max_side)
             content.append({"type": "text", "text": f"camera: {cam}"})
             content.append({"type": "image_url", "image_url": {"url": "data:image/jpeg;base64," + small}})
-        return {
+        body = {
             "model": self.cfg.model,
             "temperature": self.cfg.temperature,
+            "max_tokens": self.cfg.max_tokens,
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": content},
             ],
         }
+        body.update(self.cfg.extra_body)
+        return body
 
     def _post(self, body: dict) -> str:
         # Some providers sit behind Cloudflare, which rejects Python's default
