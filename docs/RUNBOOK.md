@@ -36,6 +36,10 @@ starts, nobody touches a keyboard, controller or phone.**
       snap (first contact). Set `finisher.slow_zone_mm` to (first contact z minus seated_z) plus
       2 mm, so the 5 mm fast steps never reach the part's first contact. (d) Hand-press a part
       and note how far above the seat the snap resists; `finisher.jam_zone_mm` must be larger.
+      (e) Press the pin in with the toy standing on a kitchen scale and note the peak reading.
+      The G gripper clamps at most 50 N (published, mobile robot page), so the pin is held by
+      friction only: if the snap needs more than roughly what two PLA faces can hold at that
+      clamp force, it slides in the fingers instead of seating.
 - [ ] **Determinism on real frames.** Take ONE real observation (the three live camera
       frames and state saved from a run's `runs/<session>/` folder, or capture one), send
       the same request to Wall-X twice (more is better) and record how far apart the

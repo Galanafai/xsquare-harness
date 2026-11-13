@@ -83,13 +83,16 @@ FIT_MM: dict[str, float] = FIT_BY_VERSION[PROP_VERSION]
 class GripperModel:
     """Map gripper command units to finger opening.
 
-    PLACEHOLDER numbers. Replace after measuring on the real G gripper:
-    command 0 and 1.526 with calipers, plus two points in between.
-    The mapping is likely not linear (revolute fingers).
+    G gripper specs from X Square's Quanta X1 Pro product overview (the mobile robot's
+    page; that the desktop kit uses the same G gripper is UNVERIFIED): stroke 0 to 180 mm,
+    gripping length 100 mm, max clamping force 50 N, payload 2 kg by friction. Fingertip
+    size is not published. The command-to-mm mapping is a PLACEHOLDER: measure command 0
+    and 1.526 with calipers, plus two points in between (likely not linear).
     """
 
     max_command: float = 1.526
-    max_opening_mm: float = 80.0  # PLACEHOLDER
+    max_opening_mm: float = 180.0  # [doc, mobile robot page] stroke 0 to 180 mm
+    max_clamp_force_n: float = 50.0  # [doc, mobile robot page]
     fingertip_width_mm: float = 18.5  # ESTIMATE from the official legacy gripper mesh (team design notes)
 
     def opening_mm(self, command: float) -> float:

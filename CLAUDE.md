@@ -35,8 +35,14 @@ untested). The harness is demo-agnostic: a demo is a set of task YAMLs.
 
 - Robot: X Square desktop leader-follower kit, two 6-DoF arms, G grippers.
   Embodiment string: `quanta_x1_pro/gripper-g` (lowercase; capital G fails). [doc]
-- Reach 649 mm per arm, repeatability +-1 mm, max EE speed 2.5 m/s. Gripper
-  stroke, force and finger size are NOT published: measure on site. [doc]
+- Reach 649 mm per arm, repeatability +-1 mm, max EE speed 2.5 m/s, rated payload 3 kg,
+  joint torque J1 to J3 30 Nm, J4 to J6 9 Nm. [doc]
+- G gripper, from the Quanta X1 Pro product overview (the MOBILE robot's page; same gripper on
+  the desktop kit is unverified): stroke 0 to 180 mm, gripping length 100 mm, max clamping
+  force 50 N, 2 kg payload by friction, opens or closes within 1 s. Wrist cameras are
+  wide-angle 640x480. Finger size and the command-to-mm mapping are not published: measure. [doc]
+  Consequence: an axial press is held only by finger friction. If the snap needs more push than
+  the grip can hold, the part slides in the fingers instead of seating.
 - Cameras: `front` (fixed, faces the robot, MIRRORED: the robot's right arm appears
   on the left of the image), `left_wrist`, `right_wrist`. [doc]
 - The organizers' robot client (x2robot_client) owns observation capture, IK,
