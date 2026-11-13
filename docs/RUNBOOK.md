@@ -21,6 +21,15 @@ starts, nobody touches a keyboard, controller or phone.**
       embodiment `quanta_x1_pro/gripper-g` (lowercase)
 - [ ] Run case 1 once with a fixed instruction. Note what happened.
 
+- [ ] **Determinism on real frames.** Take ONE real observation (the three live camera
+      frames and state saved from a run's `runs/<session>/` folder, or capture one), send
+      the same request to Wall-X twice (more is better) and record how far apart the
+      chunks are in mm (mean and worst row over the 32 rows, per arm).
+      `tools/wallx_experiments.py a` does this with a sim scene; point its `base_request` at
+      the real frames. Offline result on a sim scene was 65 mm mean (worst row 179 mm). If real
+      frames are also about 65 mm, a single chunk is a random draw and retries will not repeat
+      a motion: plan around closed-loop checks, not instruction wording.
+
 ## Hour 1 to 2: measure what the code marks as placeholder
 
 - [ ] Gripper: calipers at commands 0, 0.5, 1.0, 1.526 -> `xharness/parts.py`

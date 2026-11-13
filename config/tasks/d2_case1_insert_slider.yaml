@@ -12,7 +12,7 @@
 # hole while it presses, so "seated?" cannot be judged then. Each part goes
 #   grasp -> align -> push (contact check) -> release (open and lift)
 #   -> seated (a `hold: true` stage: arms stay still, vision looks at the hole).
-# Confirmations: 1 for grasp, align and release, 2 for push and seated.
+# Confirmations: 2 for grasp, align, push and seated; 1 for release.
 
 task_id: d2_case1_insert_slider
 goal: "Insert the orange slider into the white handle."
@@ -27,7 +27,7 @@ stages:
       - "Grasp the orange block and lift it."
     done:
       question: "Is the orange slider held between one gripper's fingers and lifted off the table?"
-      confirmations: 1
+      confirmations: 2
     budget_requests: 12
     max_retries: 2
 
@@ -37,7 +37,7 @@ stages:
       - "Hold the orange slider just above the slot in the white handle."
     done:
       question: "Is the orange slider directly above the white handle's slot and close to it (within about 3 cm)?"
-      confirmations: 1
+      confirmations: 2
       require_still: true
     budget_requests: 10
     max_retries: 2

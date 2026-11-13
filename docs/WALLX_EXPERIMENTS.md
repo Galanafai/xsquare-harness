@@ -8,6 +8,12 @@ Script: `tools/wallx_experiments.py` (calls spaced 2 s, about 60 calls in total)
 Tutorial example poses, so the model sees a meaningless scene. Real scenes may behave
 differently (unverified). Latency was 0.3 to 2.0 s per call, 3 calls above 1.2 s.
 
+## Decision (team, 2026-11-12)
+
+**control_context is dropped as a lever.** Sweeping the three accepted slots produced no effect
+above the noise, and we cannot convert mm to its [-1, 1] encoding anyway. The relay still forwards the
+client's `control_context` field untouched; we never set it ourselves.
+
 ## Summary
 
 1. **Wall-X is strongly stochastic.** The same observation gave chunks that differ by 65 mm on

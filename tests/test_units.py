@@ -391,6 +391,8 @@ def test_press_tasks_check_seating_only_after_release_in_a_hold_stage():
             assert nxt[0].id == f"release_{part}" and nxt[0].optional, path
             assert nxt[1].id.startswith("seated_") and nxt[1].hold and nxt[1].done.confirmations == 2, path
         for s in task.stages:
-            if s.id.startswith(("grasp_", "align_", "release_")):
+            if s.id.startswith("release_"):
                 assert s.done.confirmations == 1, s.id
+            if s.id.startswith(("grasp_", "align_")):
+                assert s.done.confirmations == 2, s.id
             assert not (s.id.startswith("push_") and "seated" in s.done.question.lower()), s.id

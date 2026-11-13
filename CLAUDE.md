@@ -69,6 +69,14 @@ untested). The harness is demo-agnostic: a demo is a set of task YAMLs.
   keys eff_delay_ms, lpf_T_ms, grip_delay_ms, grip_gain, grip_offset, z_offset_mm,
   rot_offset_deg (null = masked). Omitted = server startup context (6 of 7 slots set);
   all-null sets 0 slots. The relay forwards the client's field untouched. [measured]
+  Probe result (2026-11-12): slot values must be null or a number in [-1, 1] (normalized, not
+  mm or ms); only eff_delay_ms, grip_delay_ms and z_offset_mm are accepted. Sweeping them
+  moved the returned chunks by less than the call-to-call noise, so **control_context is a
+  dead end as a lever: the relay keeps forwarding the client's field untouched and we do not
+  set it** (docs/WALLX_EXPERIMENTS.md). [measured]
+- Wall-X is stochastic: the same observation gave chunks 65 mm apart on average (worst row
+  179 mm) on a sim-rendered scene. Unknown whether real frames behave the same (RUNBOOK
+  Saturday hour 1 measures it). Do not rely on a single chunk or on instruction wording. [measured]
 - Errors seen live: unknown_embodiment, missing_field, control_context_invalid. All keep
   the connection open. [measured]
 - Response: `embodiment` echo + `actions.{left_ee,right_ee}.{position[32,3],

@@ -9,7 +9,7 @@
 # hole while it presses, so "seated?" cannot be judged then. Each part goes
 #   grasp -> align -> push (contact check) -> release (open and lift)
 #   -> seated (a `hold: true` stage: arms stay still, vision looks at the hole).
-# Confirmations: 1 for grasp, align and release, 2 for push and seated.
+# Confirmations: 2 for grasp, align, push and seated; 1 for release.
 
 task_id: d2_case3_press_buttons
 goal: "Press the two buttons into the toy."
@@ -25,7 +25,7 @@ stages:
       - "Grasp the small teal button and lift it."
     done:
       question: "Is the small teal button held between one gripper's fingers and lifted off the table?"
-      confirmations: 1
+      confirmations: 2
     budget_requests: 12
     max_retries: 2
 
@@ -35,7 +35,7 @@ stages:
       - "Hold the teal button just above a button hole on the green shell."
     done:
       question: "Is the teal button directly above a button hole on the toy, within about 2 cm?"
-      confirmations: 1
+      confirmations: 2
       require_still: true
     budget_requests: 10
     max_retries: 2
@@ -76,7 +76,7 @@ stages:
       - "Grasp the small purple button and lift it."
     done:
       question: "Is the small purple button held between one gripper's fingers and lifted off the table?"
-      confirmations: 1
+      confirmations: 2
     budget_requests: 12
     max_retries: 2
 
@@ -86,7 +86,7 @@ stages:
       - "Hold the purple button just above the empty button hole."
     done:
       question: "Is the purple button directly above the EMPTY button hole on the toy, within about 2 cm?"
-      confirmations: 1
+      confirmations: 2
       require_still: true
     budget_requests: 10
     max_retries: 2

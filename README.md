@@ -20,10 +20,10 @@ Claude Code.
 - **Harness:** relay, step supervisor, yes/no vision verifier, safety
   filter with "hold still" replies, recorder, Wall-X pre-warm at startup.
 - **Testing without hardware:** fake robot, fake Wall-X and fake vision
-  model, using our real part sizes, with fault injection. 41 tests pass.
+  model, using our real part sizes, with fault injection. 44 tests pass.
 - **Real Wall-X measured** (`tools/probe_wallx.py`): auth is
-  `Authorization: Bearer <key>`, about 0.6 s per call, 4 s first call after
-  idle, exact reply format (our hold-still replies copy it).
+  `Authorization: Bearer <key>`, about 0.6 s per call (the 4 s cold start did not
+  come back after 63 idle minutes), exact reply format (our hold-still replies copy it).
 - **Vision model wired in:** Qwen (`qwen/qwen3.8-27b`) on Groq answers
   correctly in about 1.2 s. Accuracy eval tooling exists (`tools/eval_verifier.py`).
 - **Task files:** Demo 2 cases 1 to 3 (tested in sim) and Demo 5 drafts (untested). Other demos would need their own files
@@ -31,6 +31,22 @@ Claude Code.
 - **Docs:** [DIFFICULTIES](docs/DIFFICULTIES.md), [RUNBOOK](docs/RUNBOOK.md),
   [ORGANIZER_QUESTIONS](docs/ORGANIZER_QUESTIONS.md),
   [GRIPPER_FIRST_PROPOSAL](docs/GRIPPER_FIRST_PROPOSAL.md).
+
+### Findings from Nov 12 night (details in [WALLX_EXPERIMENTS](docs/WALLX_EXPERIMENTS.md))
+
+- **Wall-X is random.** The same observation gave chunks 65 mm apart on average
+  (worst row 179 mm), and different wording differed no more than that. Caveat: sim-rendered
+  scene, so real frames may differ; RUNBOOK Saturday hour 1 measures it. Closed-loop checks matter more
+  than wording.
+- **control_context is a dead end.** Slots take normalized values in [-1, 1], only three are
+  trained, and sweeping them moved chunks less than the noise. We do not set it; the relay
+  forwards the client's field untouched.
+- **Cold start is gone:** first call after 63 idle minutes took 403 ms. The relay pre-warm stays as cheap insurance.
+- **Stage split:** each press is now grasp, align, push, release and lift, then a hold-still seated
+  check (the gripper covers the hole while it presses). Release uses 1 confirmation, the rest 2.
+- **Vision eval stopped.** Groq free tier gives about 1 three-camera call per minute (7000 input
+  tokens per minute, about 1.7k per image), and many calls of the partial run ended in 429s. We rerun it on real photos
+  with a paid key on Friday.
 
 ### Proven vs still a guess
 
@@ -41,7 +57,7 @@ Claude Code.
 | Harness survives Wall-X crashes, timeouts, bad output, reconnects (sim) | Are we allowed to replace Wall-X's output at all? |
 | No false "done" in 60 sim runs with a vision model lying 10% of the time | Real vision accuracy on real camera frames |
 | Qwen on Groq answers correctly in about 1.2 s | Gripper mm opening; is the gripper reading measured or commanded? |
-| 41 tests pass | Snap force of our prints; holder approval; venue latency |
+| 44 tests pass | Snap force of our prints; holder approval; venue latency |
 
 ### Architecture options (we can mix these)
 
