@@ -141,6 +141,8 @@ class FinisherConfig:
     overtravel_mm: float = 0.5  # command this far below seated_z so the snap completes. PLACEHOLDER
     hard_floor_mm: float = 1.0  # absolute floor = press target minus this; never commanded, abort if the arm is lower
     fast_step_mm: float = 5.0  # descent step until slow_zone_mm above seated_z. PLACEHOLDER
+    # Must start ABOVE the part's first contact (resting on the hole, before the snap), or a fast
+    # step can drive up to fast_step_mm into a jam. PLACEHOLDER: first contact z minus seated_z, plus 2 mm.
     slow_zone_mm: float = 3.0
     press_step_mm: float = 1.0  # descent step inside the slow zone
     contact_margin_mm: float = 0.5  # settled lag (measured z above commanded) that means resistance. PLACEHOLDER

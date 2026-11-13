@@ -27,6 +27,10 @@ starts, nobody touches a keyboard, controller or phone.**
       the finisher refuses to press. (b) Wrist photos with a held button over the hole at 0, 2
       and 5 mm offsets: is the hole visible, and where does it appear when aligned
       (`finisher.target_offset_px`)? The sim draws holes on top of parts; a real part may hide them.
+      (c) Also read the gripper z with the part resting aligned on top of its hole, before the
+      snap (first contact). Set `finisher.slow_zone_mm` to (first contact z minus seated_z) plus
+      2 mm, so the 5 mm fast steps never reach the part's first contact. (d) Hand-press a part
+      and note how far above the seat the snap resists; `finisher.jam_zone_mm` must be larger.
 - [ ] **Determinism on real frames.** Take ONE real observation (the three live camera
       frames and state saved from a run's `runs/<session>/` folder, or capture one), send
       the same request to Wall-X twice (more is better) and record how far apart the
