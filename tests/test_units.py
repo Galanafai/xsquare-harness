@@ -264,3 +264,39 @@ def test_example_yaml_and_code_defaults_agree_on_timeouts():
     code, yaml_cfg = load_config(None).wallx, load_config("config/harness.example.yaml").wallx
     assert code.first_request_timeout_s == yaml_cfg.first_request_timeout_s == 20.0
     assert code.request_timeout_s == yaml_cfg.request_timeout_s == 8.0
+
+
+def test_rotation_step_is_geodesic_not_per_component():
+    """Smooth motion through pitch +-90 deg passes; a real 1 rad flip fails."""
+    from xharness.action_filter import rotation_steps
+
+    # Roll and yaw swing by about 1 rad per row, yet the orientation barely moves.
+    eps = np.linspace(-0.02, 0.02, 32)
+    pitch = np.pi / 2 + eps
+    rpy = np.stack([eps * 500, pitch, eps * 500], axis=1)  # fast RPY, slow real rotation
+    assert np.abs(np.diff(rpy, axis=0)[:, [0, 2]]).max() > 0.35  # old per-component check would have blocked this
+    assert rotation_steps(rpy).max() < 0.1
+    # Pitch passing exactly through 90 degrees with roll flipping sign.
+    through = np.array([[0.4, np.pi / 2 - 0.01, 0.4], [0.4 + 0.02, np.pi / 2 + 0.01, 0.4 + 0.02]])
+    assert rotation_steps(through).max() < 0.1
+    flip = np.array([[0.0, 0.0, 0.0], [1.0, 0.0, 0.0]])
+    assert abs(rotation_steps(flip)[0] - 1.0) < 1e-9
+    assert rotation_steps(flip)[0] > 0.35
+
+
+def test_filter_passes_gimbal_artifact_and_blocks_real_flip():
+    state = read_state(make_request())
+    still = chunk((0.3, -0.2, 0.2), (0.3, -0.2, 0.2))
+
+    def run(rpy):
+        c = chunk((0.3, 0.2, 0.2), (0.3, 0.2, 0.2))
+        c["rotation_rpy"] = rpy
+        return ActionFilter(FilterConfig()).check(build_response(EMB, {"left_ee": c, "right_ee": still}), EMB, state)
+
+    eps = np.linspace(-0.02, 0.02, ACTION_ROWS)
+    lock = np.stack([eps * 500, np.pi / 2 + eps, eps * 500], axis=1)  # components swing, orientation does not
+    assert run(lock).ok
+    flip = np.zeros((ACTION_ROWS, 3))
+    flip[16:, 0] = 1.0  # a real 1 rad roll jump between two rows
+    result = run(flip)
+    assert not result.ok and any("rotation step" in v for v in result.violations)

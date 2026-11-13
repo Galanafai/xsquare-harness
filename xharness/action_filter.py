@@ -73,7 +73,7 @@ class ActionFilter:
 
             first_jump = float(np.linalg.norm(pos[0] - state[arm].position))
             steps = np.linalg.norm(np.diff(pos, axis=0), axis=1)
-            rot_steps = np.abs(_wrap(np.diff(rot, axis=0))).max(axis=1)
+            rot_steps = rotation_steps(rot)
             travel = float(np.linalg.norm(pos[-1] - state[arm].position))
             stats[arm] = {
                 "first_jump_m": round(first_jump, 4),
@@ -115,6 +115,29 @@ class ActionFilter:
         return FilterResult(ok=not violations, violations=violations, modified_actions=modified, stats=stats)
 
 
-def _wrap(angles: np.ndarray) -> np.ndarray:
-    """Wrap angle differences into [-pi, pi] so 3.1 -> -3.1 is a small step."""
-    return (angles + np.pi) % (2 * np.pi) - np.pi
+def rpy_to_matrices(rpy: np.ndarray) -> np.ndarray:
+    """Rotation matrices for rows of (roll, pitch, yaw), R = Rz(yaw) Ry(pitch) Rx(roll)."""
+    roll, pitch, yaw = np.asarray(rpy, dtype=float).T
+    cr, sr, cp, sp, cy, sy = np.cos(roll), np.sin(roll), np.cos(pitch), np.sin(pitch), np.cos(yaw), np.sin(yaw)
+    return np.stack(
+        [
+            np.stack([cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr], axis=-1),
+            np.stack([sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr], axis=-1),
+            np.stack([-sp, cp * sr, cp * cr], axis=-1),
+        ],
+        axis=-2,
+    )
+
+
+def rotation_steps(rpy: np.ndarray) -> np.ndarray:
+    """Geodesic angle (rad) between consecutive rows of RPY angles.
+
+    Differencing roll, pitch and yaw separately is wrong near pitch = +-90
+    degrees (gimbal lock): roll and yaw swing wildly while the orientation
+    barely moves. The angle of the relative rotation matrix has no such trap.
+    """
+    mats = rpy_to_matrices(rpy)
+    rel = np.einsum("nji,njk->nik", mats[:-1], mats[1:])  # R_i^T R_{i+1}
+    cos_angle = np.clip((np.trace(rel, axis1=1, axis2=2) - 1.0) / 2.0, -1.0, 1.0)
+    skew = np.stack([rel[:, 2, 1] - rel[:, 1, 2], rel[:, 0, 2] - rel[:, 2, 0], rel[:, 1, 0] - rel[:, 0, 1]], axis=1)
+    return np.arctan2(np.linalg.norm(skew, axis=1) / 2.0, cos_angle)  # stable for tiny and ~pi angles
