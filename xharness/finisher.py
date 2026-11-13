@@ -11,8 +11,14 @@ centimeter only:
               then a few corrections (gain 0.6, each axis capped at 3 mm).
               z and rotation stay frozen. Aborts if the error grows twice
               in a row or detection confidence drops.
-  3. PRESS    1 mm z steps down to a hard floor, stopping on contact
-              (measured z stays above commanded z).
+  3. PRESS    to an ABSOLUTE target, the stage's seated_z minus a small overtravel:
+              fast steps until 3 mm above seated_z, then 1 mm steps. Each target is
+              sent twice and the lag (measured z above commanded z) is read on the
+              second, so a partly executed chunk is not mistaken for resistance.
+              Resistance far above seated_z is a JAM: lift 10 mm, keep the part
+              gripped, abort back to align. Resistance in the last couple of mm is
+              the snap, so the press continues to the target. Without seated_z the
+              finisher aborts before moving: it never presses blind.
   4. RELEASE  open the gripper, then LIFT 3 cm. The supervisor then runs its
               normal seated vision check.
 
@@ -161,8 +167,10 @@ class StepResult:
 class Finisher:
     """One finishing attempt for one held part. Create a new one per attempt."""
 
-    def __init__(self, cfg: FinisherConfig, filter_cfg: FilterConfig, part: str, arm: str | None = None):
+    def __init__(self, cfg: FinisherConfig, filter_cfg: FilterConfig, part: str, arm: str | None = None,
+                 seated_z: float | None = None):
         self.cfg = cfg
+        self.seated_z = seated_z  # metres, gripper z when fully seated (MEASURE ON SITE)
         # Our own chunks are ALWAYS enforced, whatever the global filter mode.
         self.filter = ActionFilter(replace(filter_cfg, mode="enforce", freeze_idle_arm=False))
         self.part_key = part
@@ -177,8 +185,8 @@ class Finisher:
         self.grow = 0
         self.converged = 0
         self.corrections = 0
-        self.press_z0 = self.press_cmd = 0.0
-        self.contact = 0
+        self.pending: dict | None = None  # press target in flight: {cmd, sends}
+        self.jam_z0 = 0.0
         self.release_requests = self.open_count = 0
         self.lift_z0 = 0.0
         self.last_move = False
@@ -200,6 +208,8 @@ class Finisher:
     # -- phases --------------------------------------------------------------
 
     def _step(self, request: dict, state: dict, grip_by_arm: dict) -> StepResult:
+        if self.seated_z is None:
+            return self._abort("seated_z is not set for this stage: refusing to press blind (measure it on site)")
         if self.arm is None:
             self.arm = self._pick_arm(request)
             if self.arm is None:
@@ -210,6 +220,8 @@ class Finisher:
             return self._vision_step(request, state, pos, grip)
         if self.phase == "press":
             return self._press_step(state, pos, grip)
+        if self.phase == "jam_lift":
+            return self._jam_lift_step(state, pos, grip)
         if self.phase == "release":
             return self._release_step(state, pos)
         return self._lift_step(state, pos)
@@ -262,8 +274,6 @@ class Finisher:
         self.converged = self.converged + 1 if np.linalg.norm(err_mm) < self.cfg.converge_mm else 0
         if self.converged >= 2:
             self.phase = "press"
-            self.press_z0 = self.press_cmd = float(pos[2])
-            self.contact = 0
             return self._press_step(state, pos, grip)
         if self.corrections >= self.cfg.max_corrections and self.converged == 0:
             return self._abort(f"not converged after {self.corrections} corrections ({np.linalg.norm(err_mm):.2f} mm)")
@@ -275,18 +285,44 @@ class Finisher:
         return self._move(state, pos, move.tolist(), grip, info, count=False)
 
     def _press_step(self, state, pos, grip) -> StepResult:
-        z = float(pos[2])
-        floor = self.press_z0 - self.cfg.max_press_depth_mm / 1000.0
-        if self.press_cmd < self.press_z0 - 1e-9:  # a command is already out: did the arm follow?
-            lag = (z - self.press_cmd) * 1000.0
-            self.contact = self.contact + 1 if lag > self.cfg.contact_margin_mm else 0
-        info = {"phase": "press", "depth_mm": round((self.press_z0 - z) * 1000, 2), "contact": self.contact}
-        if self.contact >= self.cfg.contact_requests:
-            return self._start_release(state, pos, info, "contact")
-        if self.press_cmd <= floor + 1e-9:
-            return self._start_release(state, pos, info, "floor")
-        self.press_cmd = max(self.press_cmd - self.cfg.press_step_mm / 1000.0, floor)
-        target = np.array([pos[0], pos[1], self.press_cmd])
+        cfg, z = self.cfg, float(pos[2])
+        seated = float(self.seated_z)
+        target = seated - cfg.overtravel_mm / 1000.0
+        floor = target - cfg.hard_floor_mm / 1000.0  # absolute
+        info = {"phase": "press", "above_seated_mm": round((z - seated) * 1000, 2)}
+        if z < floor - 1e-6:
+            return self._abort(f"arm is below the hard floor ({(z - floor) * 1000:.1f} mm): seated_z is wrong")
+        pend = self.pending
+        if pend and pend["sends"] == 1:  # settle: send the same target again, read the lag after it
+            pend["sends"] = 2
+            return StepResult("running", self._chunk(state, np.array([pos[0], pos[1], pend["cmd"]]), grip), info=info)
+        if pend:  # second send executed: z is settled against the command
+            lag = (z - pend["cmd"]) * 1000.0
+            above = (z - seated) * 1000.0
+            info.update(lag_mm=round(lag, 2))
+            at_target = pend["cmd"] <= target + 1e-9
+            if at_target and above <= cfg.jam_zone_mm:
+                return self._start_release(state, pos, info, "seated")
+            if (at_target or lag > cfg.contact_margin_mm) and above > cfg.jam_zone_mm:
+                self.phase, self.jam_z0 = "jam_lift", z
+                info["jam"] = f"resistance {above:.1f} mm above seated_z"
+                return self._jam_lift_step(state, pos, grip, info)
+        cur = pend["cmd"] if pend else z
+        if cur - seated > cfg.slow_zone_mm / 1000.0 + 1e-6:
+            nxt = max(cur - cfg.fast_step_mm / 1000.0, seated + cfg.slow_zone_mm / 1000.0)
+        else:
+            nxt = max(cur - cfg.press_step_mm / 1000.0, target)
+        self.pending = {"cmd": max(nxt, floor), "sends": 1}
+        return StepResult("running", self._chunk(state, np.array([pos[0], pos[1], self.pending["cmd"]]), grip), info=info)
+
+    def _jam_lift_step(self, state, pos, grip, info=None) -> StepResult:
+        """A jam: lift a little with the part still gripped, then abort so the supervisor re-aligns."""
+        info = info or {"phase": "jam_lift"}
+        lifted = (float(pos[2]) - self.jam_z0) * 1000.0
+        if lifted >= self.cfg.jam_lift_mm - 0.5:
+            return self._abort(f"jam above seated_z; lifted {lifted:.1f} mm, part still gripped")
+        top = self.jam_z0 + self.cfg.jam_lift_mm / 1000.0
+        target = np.array([pos[0], pos[1], min(pos[2] + self.cfg.lift_step_mm / 1000.0, top)])
         return StepResult("running", self._chunk(state, target, grip), info=info)
 
     def _start_release(self, state, pos, info, why) -> StepResult:

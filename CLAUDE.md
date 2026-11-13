@@ -120,14 +120,16 @@ robot client -> `xharness/relay.py` -> Wall-X; replies -> `action_filter.py` -> 
   for the last centimeter, replacing Wall-X there: detect the held part (HSV color) and the
   hole (round dark blob) in the active wrist camera, look-then-move servo with an uncalibrated
   2x2 image Jacobian (explore ~3 mm per axis, Broyden refine, gain 0.6, 3 mm cap, z and
-  rotation frozen), 1 mm stepped press to `max_press_depth_mm` or contact, release, lift 3 cm.
+  rotation frozen), press to an ABSOLUTE target (stage `seated_z` minus 0.5 mm overtravel, fast steps then 1 mm steps, each target sent twice and lag read on the second), jam detection (resistance more than `jam_zone_mm` above seated_z: lift 10 mm, keep the part, abort back to align), release, lift 3 cm. No `seated_z` = abort before pressing, never press blind.
   Every chunk passes `action_filter.py` (forced to enforce); any doubt (low confidence, error
   grew twice, arm did not move, bad Jacobian) aborts to HOLD. Stages: YAML `type: finisher`
   with `only: finisher`; Wall-X-only push/release stages are `only: wallx`. A failed finisher
   or seated check loops back (`on_fail_goto`, `max_loops`). It is harness-generated arm motion:
   depends on the organizer answer to docs/ORGANIZER_QUESTIONS.md #13. All its numbers are
-  placeholders (MEASURE ON SITE); the sim draws holes on top of parts, a simplification (a real
-  part can hide its hole). Sim: `python -m sim.run --case 3 --finisher --place-offset-mm 5 15`.
+  placeholders (MEASURE ON SITE, including each stage's `seated_z`). The sim draws holes on top of
+  parts, a simplification: **a real held part may hide its hole** (Saturday hour 1 takes wrist
+  photos of a held button at 0, 2 and 5 mm offsets to check). The sim also models snap
+  resistance: a part in tolerance stops 1.5 mm above its seat and seats only if pushed through. Sim: `python -m sim.run --case 3 --finisher --place-offset-mm 5 15`.
 - `recorder.py`: `runs/<time>_<session>/events.jsonl` + camera frames.
 - `tasks.py`, `parts.py`, `config.py`: task YAML format, Demo 2 parts, config + env.
 - Why fixed stages instead of an LLM planner: no-touch runs need predictable,

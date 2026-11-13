@@ -73,6 +73,9 @@ class Stage:
     type: str = "wallx"
     part: str = ""  # finisher only: key in xharness/parts.py of the held part
     target: str = ""  # finisher only: name of the hole or slot (documentation and logs)
+    # finisher only: gripper z in metres (robot base frame, as in observation.state) when the part is
+    # fully seated. MEASURE ON SITE. None = the finisher aborts before pressing (never press blind).
+    seated_z: float | None = None
     # Which mode this stage belongs to: None = both, "finisher" = only when
     # finisher.enabled, "wallx" = only when it is not.
     only: str | None = None

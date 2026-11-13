@@ -21,6 +21,12 @@ starts, nobody touches a keyboard, controller or phone.**
       embodiment `quanta_x1_pro/gripper-g` (lowercase)
 - [ ] Run case 1 once with a fixed instruction. Note what happened.
 
+- [ ] **Finisher inputs (only if harness-generated motion is approved).** (a) Hand-place each
+      part fully seated, read the gripper z in `observation.state` from a recorded request, and
+      write it as `seated_z` (metres) on that finisher stage in `config/tasks/*.yaml`; without it
+      the finisher refuses to press. (b) Wrist photos with a held button over the hole at 0, 2
+      and 5 mm offsets: is the hole visible, and where does it appear when aligned
+      (`finisher.target_offset_px`)? The sim draws holes on top of parts; a real part may hide them.
 - [ ] **Determinism on real frames.** Take ONE real observation (the three live camera
       frames and state saved from a run's `runs/<session>/` folder, or capture one), send
       the same request to Wall-X twice (more is better) and record how far apart the

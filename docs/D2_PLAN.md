@@ -79,13 +79,26 @@ Wall-X already does well.
    the hole or slot (shape). It makes one tiny test move per axis (about 3 mm)
    to learn how the image moves, so no camera calibration is needed. Then it
    nudges 2 to 3 mm at a time until they line up, usually 3 to 8 nudges.
-3. **Stepped press.** Lower 1 mm per step to a hard depth limit. If the arm
-   stops reaching the height we commanded, that's contact, so stop. The depth
-   limit protects the motors.
+3. **Stepped press to an absolute target.** Each part has a measured `seated_z`
+   (gripper height when the part is fully seated, read by hand-placing a seated
+   part during setup). The press target is `seated_z` minus 0.5 mm, with a hard
+   floor 1 mm below that. Fast steps (5 mm) until 3 mm above `seated_z`, then
+   1 mm steps; every target is sent twice and the lag is read after the second,
+   so a partly executed chunk is not mistaken for resistance. First contact is
+   NOT seated: on the real toy it is the start of snap resistance, so resistance
+   within the last couple of mm means keep pressing, while resistance further
+   above `seated_z` is a jam: lift 10 mm, keep the part, re-align, retry
+   (bounded). No `seated_z`, no press: the finisher never presses blind.
 4. **Release, lift, check.** Open, lift 3 cm, ask "seated flush?" now that the
    hole is visible.
 5. **Retry or move on.** Bounded retries, then hold still. Earlier steps keep
    their points.
+
+**Known risk: the held part may hide the hole.** The sim draws holes on top of
+parts, which a real camera will not. Saturday hour 1 takes wrist photos of a
+held button over the hole at 0, 2 and 5 mm offsets to see whether the hole is
+visible at all (and, if not, we need a marker, a different camera angle or the
+Wall-X-only track).
 
 Everything the finisher sends still goes through the existing safety filter.
 It would sit behind a config flag, off by default, so the Wall-X-only path

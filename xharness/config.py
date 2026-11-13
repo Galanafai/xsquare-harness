@@ -135,11 +135,19 @@ class FinisherConfig:
     target_offset_px: list = field(default_factory=lambda: [0.0, 0.0])  # MEASURE: where the aligned hole appears
     # --- image detection
     dark_value_max: float = 0.22  # HSV value below which a pixel can be hole shadow (0 to 1)
-    # --- stepped press
-    press_step_mm: float = 1.0
-    max_press_depth_mm: float = 40.0  # hard floor below the z where pressing starts. PLACEHOLDER, MEASURE ON SITE
-    contact_margin_mm: float = 0.5  # measured z this far above commanded = pushing on something. PLACEHOLDER
-    contact_requests: int = 2
+    # --- press. The target is ABSOLUTE: the stage's seated_z (gripper z with the part fully
+    # seated, MEASURE ON SITE by hand-placing a seated part and reading observation.state)
+    # minus overtravel. Without seated_z the finisher never presses.
+    overtravel_mm: float = 0.5  # command this far below seated_z so the snap completes. PLACEHOLDER
+    hard_floor_mm: float = 1.0  # absolute floor = press target minus this; never commanded, abort if the arm is lower
+    fast_step_mm: float = 5.0  # descent step until slow_zone_mm above seated_z. PLACEHOLDER
+    slow_zone_mm: float = 3.0
+    press_step_mm: float = 1.0  # descent step inside the slow zone
+    contact_margin_mm: float = 0.5  # settled lag (measured z above commanded) that means resistance. PLACEHOLDER
+    # Resistance while MORE than this above seated_z is a jam (part on the rim, misaligned), not the snap.
+    # Must exceed the snap resistance offset (sim: 1.5 mm). The brief said 1 mm; 2 mm is needed for the sim snap.
+    jam_zone_mm: float = 2.0
+    jam_lift_mm: float = 10.0  # on a jam: lift this much (gripper stays closed), then abort back to align
     # --- release and lift
     grip_command: float = 0.0  # gripper command that keeps the part gripped (used if Wall-X never set one). PLACEHOLDER
     open_command: float = 1.526  # command that opens the gripper

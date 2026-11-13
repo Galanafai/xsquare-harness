@@ -43,6 +43,7 @@ stages:
     type: finisher
     only: finisher
     part: shell
+    seated_z: null   # MEASURE ON SITE: gripper z (m, observation.state) with the part hand-placed fully seated. null = never press
     target: "shell_seat"
     budget_requests: 90
     on_fail_goto: align_shell

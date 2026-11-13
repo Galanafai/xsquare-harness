@@ -58,6 +58,9 @@ async def run_case(case: int, *, noise: float = 0.003, wallx_faults: FaultPlan |
     task = load_task(CASE_TASKS[case], cfg.finisher.enabled)
     workdir = Path(tempfile.mkdtemp(prefix="xharness-sim-"))
 
+    for stage in task.stages:  # on site a person measures this by hand; in sim we read it from the world
+        if stage.type == "finisher":
+            stage.seated_z = world.seated_gripper_z(stage.part)
     vlm = FakeVLM(world, faults=vlm_faults or {}, slow_s=3.0, seed=seed)
     vlm_url = vlm.start()
 

@@ -23,13 +23,14 @@ def observation(world):
             "observation": {"images": render_views(world), "state": world.state()}}
 
 
-def drive(world, part, arm, offset, cfg=None, max_steps=150, hook=None, after_hold=None):
+def drive(world, part, arm, offset, cfg=None, max_steps=200, hook=None, after_hold=None, seated_z="world"):
     """Run a Finisher directly against the fake world. Returns (last result, finisher)."""
     slot = world.free_slot_for(part)
     _hold(world, arm, part, slot.xy + np.array(offset), slot.seat_z + 0.03)
     if after_hold:
         after_hold(world)
-    fin = Finisher(cfg or FinisherConfig(), FilterConfig(), part, None)
+    z = world.seated_gripper_z(part) if seated_z == "world" else seated_z
+    fin = Finisher(cfg or FinisherConfig(), FilterConfig(), part, None, z)
     for _ in range(max_steps):
         req = observation(world)
         res = fin.step(req, read_state(req), {arm: 0.0})
@@ -89,18 +90,96 @@ def test_chunks_that_fail_the_action_filter_abort():
     slot = world.slots["handle_slot"]
     _hold(world, "left_ee", "slider", slot.xy + [0.01, 0.0], slot.seat_z + 0.03)
     tiny = {arm: ArmBox(min=[0.0, 0.0, 0.0], max=[0.1, 0.1, 0.1]) for arm in ("left_ee", "right_ee")}
-    fin = Finisher(FinisherConfig(), FilterConfig(workspace=tiny), "slider", None)
+    fin = Finisher(FinisherConfig(), FilterConfig(workspace=tiny), "slider", None, world.seated_gripper_z("slider"))
     req = observation(world)
     res = fin.step(req, read_state(req), {"left_ee": 0.0})
     assert res.status == "aborted" and "action filter" in res.reason and res.actions is None
 
 
-def test_press_stops_at_the_hard_floor():
+def test_stopping_on_first_contact_does_not_complete_the_snap_but_the_new_logic_does():
+    # Old logic: step down until the arm stops following, then stop. The sim part resists 1.5 mm above its seat.
     world = _prepare(1, 0)
-    cfg = FinisherConfig(max_press_depth_mm=5.0)  # floor far above the seat: never makes contact
-    res, fin = drive(world, "slider", "left_ee", (0.002, 0.0), cfg)
-    assert res.status == "done" and not world.seated("slider")
-    assert fin.press_z0 - world.arms["left_ee"].pos[2] < 0.0  # lifted back above where it started
+    slot = world.slots["handle_slot"]
+    _hold(world, "left_ee", "slider", slot.xy, slot.seat_z + 0.02)
+    arm, z = world.arms["left_ee"], world.arms["left_ee"].pos[2]
+    for _ in range(40):
+        cmd = z - 0.001
+        pos = np.tile(arm.pos, (32, 1))
+        pos[:, 2] = cmd
+        actions = {a: {"position": np.tile(world.arms[a].pos, (32, 1)), "rotation_rpy": np.tile(world.arms[a].rpy, (32, 1)),
+                       "gripper": np.full(32, 0.0)} for a in world.arms}
+        actions["left_ee"]["position"] = pos
+        world.execute(actions)
+        if arm.pos[2] - cmd > 0.0005:  # first contact: the arm stopped following
+            break
+        z = cmd
+    assert not world.seated("slider")
+    assert abs(world.parts["slider"].pos[2] - (slot.seat_z + 0.0015)) < 1e-4  # resting on the snap
+
+    world = _prepare(1, 0)
+    res, _ = drive(world, "slider", "left_ee", (0.0, 0.0))
+    assert res.status == "done" and world.seated("slider")
+
+
+def test_each_press_target_is_sent_twice_and_descent_is_fast_then_slow():
+    world = _prepare(1, 0)
+    sent = []
+
+    def spy(fin):
+        if fin.phase == "press" and fin.pending:
+            sent.append((fin.pending["cmd"], fin.pending["sends"]))
+
+    res, fin = drive(world, "slider", "left_ee", (0.003, 0.0), hook=spy)
+    assert res.status == "done"
+    cmds = [c for c, _ in sent]
+    assert [n for _, n in sent][:4] == [1, 2, 1, 2]  # every target twice
+    distinct = list(dict.fromkeys(cmds))
+    steps = -np.diff(distinct) * 1000
+    seated = world.seated_gripper_z("slider")
+    fast = [d for d, c in zip(steps, distinct) if c - seated > 0.003]
+    assert max(steps) <= 5.0 + 1e-6 and fast and all(abs(d - 5.0) < 1e-6 for d in fast[:-1])
+    assert abs(steps[-1] - 1.0) < 1.01 and abs(distinct[-1] - (seated - 0.0005)) < 1e-9  # ends at seated_z - overtravel
+
+
+def test_jam_above_seated_z_lifts_keeps_the_part_and_aborts_back_to_align():
+    world = _prepare(1, 0)
+
+    def tiny_tolerance(w):
+        w.slots["handle_slot"].tol_m = 1e-6  # even an aligned part now jams on the rim
+
+    res, fin = drive(world, "slider", "left_ee", (0.0, 0.0), after_hold=tiny_tolerance)
+    assert res.status == "aborted" and "jam" in res.reason
+    assert world.arms["left_ee"].holding == "slider"  # never released on a jam
+    assert not any("released" in e for e in world.events)
+    rim_z = world.slots["handle_slot"].seat_z + 0.01 + world.parts["slider"].size[2] / 2
+    assert world.arms["left_ee"].pos[2] > rim_z + 0.009  # lifted about 10 mm
+
+
+def test_unset_seated_z_aborts_before_any_motion():
+    world = _prepare(1, 0)
+    slot = world.slots["handle_slot"]
+    _hold(world, "left_ee", "slider", slot.xy + [0.01, 0.0], slot.seat_z + 0.03)
+    fin = Finisher(FinisherConfig(), FilterConfig(), "slider", None, None)
+    req = observation(world)
+    res = fin.step(req, read_state(req), {"left_ee": 0.0})
+    assert res.status == "aborted" and "seated_z" in res.reason and res.actions is None
+
+
+def test_wrong_seated_z_is_caught_as_a_jam_or_the_hard_floor():
+    # seated_z 6 mm lower than reality: the arm bottoms out far above the "seat" = jam, never a release
+    world = _prepare(1, 0)
+    res, _ = drive(world, "slider", "left_ee", (0.0, 0.0), seated_z=world.seated_gripper_z("slider") - 0.006)
+    assert res.status == "aborted" and "jam" in res.reason
+    assert world.arms["left_ee"].holding == "slider"  # not released
+    # seated_z raised mid-press so the arm is below the absolute floor: abort
+    world = _prepare(1, 0)
+
+    def raise_seated_z(fin):
+        if fin.phase == "press" and fin.pending and fin.pending["cmd"] < fin.seated_z + 0.004:
+            fin.seated_z += 0.02
+
+    res, _ = drive(world, "slider", "left_ee", (0.0, 0.0), hook=raise_seated_z)
+    assert res.status == "aborted" and "hard floor" in res.reason
 
 
 def finisher_task():

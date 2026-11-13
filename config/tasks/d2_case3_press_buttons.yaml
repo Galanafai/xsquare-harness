@@ -47,6 +47,7 @@ stages:
     type: finisher
     only: finisher
     part: button_a
+    seated_z: null   # MEASURE ON SITE: gripper z (m, observation.state) with the part hand-placed fully seated. null = never press
     target: "hole_a or hole_b (nearest)"
     budget_requests: 90
     on_fail_goto: align_teal
@@ -111,6 +112,7 @@ stages:
     type: finisher
     only: finisher
     part: button_b
+    seated_z: null   # MEASURE ON SITE: gripper z (m, observation.state) with the part hand-placed fully seated. null = never press
     target: "the empty hole"
     budget_requests: 90
     on_fail_goto: align_purple

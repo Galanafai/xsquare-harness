@@ -43,6 +43,9 @@ HOME_RPY = {
 }
 
 
+SNAP_RESISTANCE_M = 0.0015  # a part within tolerance stops this far above its seat until pushed through
+
+
 @dataclass
 class SimPart:
     name: str
@@ -220,7 +223,11 @@ class World:
             bottom = target[2] - part.size[2] / 2
             if xy_err > 0.02 or bottom > slot.seat_z + 0.02:  # buttons holes are 30 mm apart: do not react to the neighbor
                 continue  # not near this slot
-            if xy_err <= slot.tol_m and bottom <= slot.seat_z:
+            if xy_err <= slot.tol_m and bottom > slot.seat_z and bottom < slot.seat_z + SNAP_RESISTANCE_M:
+                # Snap resistance: within tolerance the part stops here and only seats if it is
+                # commanded further down (bottom at or below seat_z). First contact is NOT seated.
+                target[2] = slot.seat_z + SNAP_RESISTANCE_M + part.size[2] / 2
+            elif xy_err <= slot.tol_m and bottom <= slot.seat_z:
                 part.pos = np.array([slot.xy[0], slot.xy[1], slot.seat_z])
                 part.seated_in, part.fixed, part.held_by = slot.name, True, None
                 slot.filled_by = part.name
@@ -275,6 +282,11 @@ class World:
 
     def arms_clear(self) -> bool:
         return all(a.holding is None and a.gripper > GRIPPER.max_command * 0.6 for a in self.arms.values())
+
+    def seated_gripper_z(self, part_name: str) -> float:
+        """Gripper z (metres) when `part_name` is fully seated: what a person would measure on site."""
+        slot = next(sl for sl in self.slots.values() if part_name in sl.accepts)
+        return float(slot.seat_z + self.parts[part_name].size[2] / 2)
 
     def free_slot_for(self, name: str) -> Slot | None:
         for slot in self.slots.values():

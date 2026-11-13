@@ -196,7 +196,7 @@ class Supervisor:
         key = (stage.id, run.attempt)
         held = self._finishers.get(goal)
         if held is None or held[:2] != key:
-            fin = Finisher(self.finisher_cfg, self.filter_cfg, stage.part, stage.active_arm)
+            fin = Finisher(self.finisher_cfg, self.filter_cfg, stage.part, stage.active_arm, stage.seated_z)
             self._finishers[goal] = (stage.id, run.attempt, fin)
         fin = self._finishers[goal][2]
         if run.requests_in_attempt > stage.budget_requests:

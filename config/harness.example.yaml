@@ -62,8 +62,13 @@ recorder:
 
 finisher:                       # harness-generated final alignment and press. OFF: needs organizer approval (#13)
   enabled: false
-  max_press_depth_mm: 40.0      # PLACEHOLDER hard floor below the z where pressing starts. MEASURE ON SITE
-  contact_margin_mm: 0.5        # PLACEHOLDER: measured z this far above commanded = contact
+  # The press target is ABSOLUTE: each finisher stage in config/tasks/*.yaml needs seated_z (gripper z, metres,
+  # with the part hand-placed fully seated; MEASURE ON SITE). Without it the finisher never presses.
+  overtravel_mm: 0.5            # PLACEHOLDER: command this far below seated_z
+  hard_floor_mm: 1.0            # absolute floor = target minus this
+  fast_step_mm: 5.0             # PLACEHOLDER descent step until 3 mm above seated_z
+  contact_margin_mm: 0.5        # PLACEHOLDER settled lag that means resistance
+  jam_zone_mm: 2.0              # PLACEHOLDER resistance further above seated_z than this is a jam
   grip_command: 0.0             # PLACEHOLDER gripper command that keeps a part gripped
   open_above: 1.0               # PLACEHOLDER reading that counts as open
   # explore_mm 3, gain 0.6, max_step_mm 3, converge_mm 0.3, press_step_mm 1, lift_mm 30: see FinisherConfig
