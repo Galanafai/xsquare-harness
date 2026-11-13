@@ -334,3 +334,21 @@ def test_verifier_body_caps_output_and_merges_extra_fields():
     body = Verifier(cfg)._build_body("t.s", "q?", {"observation": {"images": {}}}, "")
     assert body["max_tokens"] == 120
     assert body["reasoning_effort"] == "none"
+
+
+def test_every_task_yaml_loads_and_webui_instructions_match_goals():
+    """CLAUDE.md rule: each WebUI case instruction must equal a task YAML goal."""
+    import glob
+    import json
+
+    from xharness.tasks import load_task
+
+    tasks = {t.task_id.split("_")[0]: [] for t in map(load_task, glob.glob("config/tasks/*.yaml"))}
+    for path in glob.glob("config/tasks/*.yaml"):
+        task = load_task(path)
+        tasks[task.task_id.split("_")[0]].append(task)
+    for demo, webui in (("d2", "config/webui/local_d2_snapfit.json"), ("d5", "config/webui/local_d5_medsort.json")):
+        cases = json.load(open(webui))["data"]
+        assert len(cases) == len(tasks[demo])
+        for case in cases:
+            assert sum(t.matches(case["instruction"]) for t in tasks[demo]) == 1, case["instruction"]

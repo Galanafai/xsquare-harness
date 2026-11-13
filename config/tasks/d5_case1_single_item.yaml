@@ -1,0 +1,65 @@
+# Demo 5 MedSort (fallback, K = 2.3). UNTESTED: no sim world exists for Demo 5,
+# so these stages have never run through sim/run.py or the verifier eval.
+#
+# ASSUMPTIONS to confirm against the real A-board case text before use:
+#   * `goal` below is OUR wording. It MUST be replaced by (and equal to) the
+#     case `instruction` the organizers' task JSON sends, and the same text goes
+#     in config/webui/local_d5_medsort.json.
+#   * Bin mapping used in the questions: needle-free 10 mL syringe -> sharps
+#     container, 4 oz specimen cup -> red infectious-waste bin, 250 to 300 mL PET
+#     bottle -> blue recycling bin. Confirm with the organizers (syringes are the
+#     doubtful one: infectious vs sharps).
+#   * Colors and positions of bins are unknown. Nothing here names a left or right side.
+#
+# Enable with:  python -m xharness --task config/tasks/d5_case1_single_item.yaml
+
+task_id: d5_case1_single_item
+goal: "Put the item on the table into the correct waste bin."
+context: >
+  Medical waste sorting on a tabletop. Three bins stand on the table: a red
+  infectious-waste bin, a sharps container, and a blue recycling bin. One item
+  lies on the table: a needle-free 10 mL syringe, a 4 oz specimen cup, or a
+  250 to 300 mL PET bottle. Correct bins: syringe -> sharps container,
+  specimen cup -> red infectious-waste bin, PET bottle -> blue recycling bin.
+
+stages:
+  - id: d5c1_grasp_item
+    instructions:
+      - "Pick up the item from the table."
+      - "Grasp the item on the table and lift it."
+    done:
+      question: "Is the item held between one gripper's fingers and lifted off the table?"
+      confirmations: 2
+    budget_requests: 12
+    max_retries: 2
+
+  - id: d5c1_over_bin
+    instructions:
+      - "Move the item above the correct bin."
+      - "Carry the item over the bin it belongs in."
+    done:
+      question: "Is the held item directly above the opening of the correct bin for it (syringe: sharps container, specimen cup: red bin, PET bottle: blue bin)?"
+      confirmations: 2
+      require_still: true
+    budget_requests: 12
+    max_retries: 2
+
+  - id: d5c1_drop_in_bin
+    instructions:
+      - "Release the item into the bin."
+      - "Open the gripper and drop the item into the bin."
+    done:
+      question: "Is the item inside the correct bin (not on the table, not on the rim, not in a different bin)?"
+      confirmations: 2
+    budget_requests: 8
+    max_retries: 1
+
+  - id: d5c1_retract
+    instructions:
+      - "Move the arm up and away from the bin."
+    done:
+      question: "Are both grippers open and clear of the bins, with the item still inside the bin?"
+      confirmations: 1
+    budget_requests: 6
+    max_retries: 1
+    optional: true

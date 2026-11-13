@@ -1,0 +1,74 @@
+# Demo 5 MedSort (fallback, K = 2.3). UNTESTED: no sim world exists for Demo 5,
+# so these stages have never run through sim/run.py or the verifier eval.
+#
+# ASSUMPTIONS to confirm against the real A-board case text before use:
+#   * `goal` below is OUR wording. It MUST be replaced by (and equal to) the
+#     case `instruction` the organizers' task JSON sends, and the same text goes
+#     in config/webui/local_d5_medsort.json.
+#   * Bin mapping used in the questions: needle-free 10 mL syringe -> sharps
+#     container, 4 oz specimen cup -> red infectious-waste bin, 250 to 300 mL PET
+#     bottle -> blue recycling bin. Confirm with the organizers (syringes are the
+#     doubtful one: infectious vs sharps).
+#   * Colors and positions of bins are unknown. Nothing here names a left or right side.
+#
+# Enable with:  python -m xharness --task config/tasks/d5_case3_sort_all.yaml
+
+# Case 3: several items of all three kinds. The item COUNT is unknown, so the
+# stages are per category ("none of this kind left on the table") instead of
+# per item. Each stage reuses the same pick-and-drop instruction and lets
+# Wall-X repeat it; the budget is large because one stage covers many items.
+# Order (syringes, cups, bottles) is a guess: small items first because bottles
+# are the largest and may block the camera.
+
+task_id: d5_case3_sort_all
+goal: "Sort all the items on the table into the correct bins."
+context: >
+  Medical waste sorting on a tabletop. Three bins stand on the table: a red
+  infectious-waste bin, a sharps container, and a blue recycling bin. Several
+  items lie on the table: needle-free 10 mL syringes, 4 oz specimen cups, and
+  250 to 300 mL PET bottles. Correct bins: syringes -> sharps container,
+  specimen cups -> red infectious-waste bin, PET bottles -> blue recycling bin.
+
+stages:
+  - id: d5c3_sort_syringes
+    instructions:
+      - "Pick up each syringe and put it in the sharps container."
+      - "Put all the syringes into the sharps container, one at a time."
+    done:
+      question: "Are there no syringes left on the table, and are the syringes inside the sharps container?"
+      confirmations: 2
+      require_still: true
+    budget_requests: 40
+    max_retries: 1
+
+  - id: d5c3_sort_cups
+    instructions:
+      - "Pick up each specimen cup and put it in the red infectious-waste bin."
+      - "Put all the specimen cups into the red bin, one at a time."
+    done:
+      question: "Are there no specimen cups left on the table, and are the cups inside the red infectious-waste bin?"
+      confirmations: 2
+      require_still: true
+    budget_requests: 40
+    max_retries: 1
+
+  - id: d5c3_sort_bottles
+    instructions:
+      - "Pick up each plastic bottle and put it in the blue recycling bin."
+      - "Put all the PET bottles into the blue recycling bin, one at a time."
+    done:
+      question: "Are there no plastic bottles left on the table, and are the bottles inside the blue recycling bin?"
+      confirmations: 2
+      require_still: true
+    budget_requests: 40
+    max_retries: 1
+
+  - id: d5c3_retract
+    instructions:
+      - "Move both arms up and away from the bins."
+    done:
+      question: "Are both grippers open and clear of the bins, and is the table free of loose items?"
+      confirmations: 1
+    budget_requests: 6
+    max_retries: 1
+    optional: true

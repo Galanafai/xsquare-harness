@@ -1,0 +1,71 @@
+{
+  "mode": "benchmark",
+  "task_name": "d5_medsort",
+  "model": {
+    "config_name": "d5_harness",
+    "deploy": "lan",
+    "model_address": "ws://REPLACE_WITH_LAPTOP_LAN_IP:8001",
+    "robot_type": "DESKTOP",
+    "mode_type": "EndPose",
+    "infer_type": "sync",
+    "infer_params": {
+      "action_horizon": 32,
+      "control_dt": 0.005,
+      "interpolate_multiplier": 8,
+      "async_params": {
+        "api_schema": "public_v2",
+        "embodiment": "quanta_x1_pro/gripper-g",
+        "normalization": "provided",
+        "control_context": "masked"
+      }
+    }
+  },
+  "data": [
+    {
+      "case_id": 1,
+      "instruction": "Put the item on the table into the correct waste bin.",
+      "image_path": "",
+      "env_description": {
+        "bins": "red infectious-waste bin, sharps container, blue recycling bin (positions: UNKNOWN, fill in)",
+        "item": "one syringe, specimen cup or PET bottle on the table"
+      },
+      "scores_dict": {
+        "Grasp the item": 3,
+        "Item above the correct bin": 2,
+        "Item inside the correct bin": 5
+      },
+      "timeout": 480
+    },
+    {
+      "case_id": 2,
+      "instruction": "Sort the item on the table into the bin for its category.",
+      "image_path": "",
+      "env_description": {
+        "bins": "red infectious-waste bin, sharps container, blue recycling bin (positions: UNKNOWN, fill in)",
+        "item": "one item of unknown category"
+      },
+      "scores_dict": {
+        "Grasp the item": 3,
+        "Item above the matching bin": 2,
+        "Item inside the matching bin": 5
+      },
+      "timeout": 480
+    },
+    {
+      "case_id": 3,
+      "instruction": "Sort all the items on the table into the correct bins.",
+      "image_path": "",
+      "env_description": {
+        "bins": "red infectious-waste bin, sharps container, blue recycling bin (positions: UNKNOWN, fill in)",
+        "items": "several syringes, specimen cups and PET bottles"
+      },
+      "scores_dict": {
+        "Syringes sorted": 3,
+        "Specimen cups sorted": 3,
+        "Bottles sorted": 4
+      },
+      "timeout": 480
+    }
+  ],
+  "_note": "UNTESTED DRAFT for Demo 5 MedSort. Instructions and scores_dict are OUR placeholders; replace with the organizers' case text before use. Each instruction must equal the matching task YAML goal."
+}
