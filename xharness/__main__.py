@@ -47,7 +47,7 @@ def main(argv: list[str] | None = None) -> int:
         cfg.supervisor.unknown_goal = "hold"
     tasks = load_tasks(task_files, cfg.finisher.enabled)
     verifier = Verifier(cfg.verifier)
-    supervisor = Supervisor(tasks, cfg.supervisor, verifier)
+    supervisor = Supervisor(tasks, cfg.supervisor, verifier, cfg.finisher, cfg.filter)
     if args.reset_state:
         supervisor.reset()
 
@@ -58,6 +58,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  listen          : ws://{cfg.listen.host}:{cfg.listen.port}")
     print(f"  tasks           : {[t.task_id for t in tasks] or 'none (passthrough)'}")
     print(f"  verifier        : {'on, ' + cfg.verifier.model if verifier.available else 'OFF (stages can never complete)'}")
+    print(f"  finisher        : {'ON (harness-generated motion, ask organizers #13)' if cfg.finisher.enabled else 'off'}")
     print(f"  filter mode     : {cfg.filter.mode}   hold on done: {cfg.hold.on_done}")
     for w in warnings:
         print(f"  WARNING: {w}")

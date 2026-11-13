@@ -9,6 +9,9 @@
 # hole while it presses, so "seated?" cannot be judged then. Each part goes
 #   grasp -> align -> push (contact check) -> release (open and lift)
 #   -> seated (a `hold: true` stage: arms stay still, vision looks at the hole).
+# With finisher.enabled the push and release stages are replaced by a `finisher` stage
+# (xharness/finisher.py: servo, press, release, lift) and a failed seated check loops back
+# to grasp, at most max_loops times. Without it (default) the stages marked `only: wallx` run.
 # Confirmations: 2 for grasp, align, push and seated; 1 for release.
 
 task_id: d2_case3_press_buttons
@@ -40,7 +43,17 @@ stages:
     budget_requests: 10
     max_retries: 2
 
+  - id: finish_teal
+    type: finisher
+    only: finisher
+    part: button_a
+    target: "hole_a or hole_b (nearest)"
+    budget_requests: 90
+    on_fail_goto: align_teal
+    max_loops: 2
+
   - id: push_teal
+    only: wallx
     instructions:
       - "Press the teal button down into the hole."
       - "Push the teal button straight down into the toy."
@@ -52,6 +65,7 @@ stages:
     max_retries: 2
 
   - id: release_teal
+    only: wallx
     instructions:
       - "Release the teal button and move the arm up and away."
       - "Open the gripper and lift the arm straight up."
@@ -63,6 +77,8 @@ stages:
     optional: true
 
   - id: seated_teal
+    on_fail_goto: grasp_teal
+    max_loops: 2
     done:
       question: "Is the teal button seated flush in a hole on the toy (not lying on top or on the table)?"
       confirmations: 2
@@ -91,7 +107,17 @@ stages:
     budget_requests: 10
     max_retries: 2
 
+  - id: finish_purple
+    type: finisher
+    only: finisher
+    part: button_b
+    target: "the empty hole"
+    budget_requests: 90
+    on_fail_goto: align_purple
+    max_loops: 2
+
   - id: push_purple
+    only: wallx
     instructions:
       - "Press the purple button down into the hole."
       - "Push the purple button straight down into the toy."
@@ -103,6 +129,7 @@ stages:
     max_retries: 2
 
   - id: release_purple
+    only: wallx
     instructions:
       - "Release the purple button and move both arms up and away."
       - "Open the gripper and lift the arm straight up."
@@ -114,6 +141,8 @@ stages:
     optional: true
 
   - id: seated_both
+    on_fail_goto: grasp_purple
+    max_loops: 2
     done:
       question: "Are BOTH buttons (teal and purple) now seated flush in the toy's holes?"
       confirmations: 2

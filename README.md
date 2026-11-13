@@ -20,7 +20,7 @@ Claude Code.
 - **Harness:** relay, step supervisor, yes/no vision verifier, safety
   filter with "hold still" replies, recorder, Wall-X pre-warm at startup.
 - **Testing without hardware:** fake robot, fake Wall-X and fake vision
-  model, using our real part sizes, with fault injection. 44 tests pass.
+  model, using our real part sizes, with fault injection. 55 tests pass.
 - **Real Wall-X measured** (`tools/probe_wallx.py`): auth is
   `Authorization: Bearer <key>`, about 0.6 s per call (the 4 s cold start did not
   come back after 63 idle minutes), exact reply format (our hold-still replies copy it).
@@ -51,6 +51,15 @@ Claude Code.
   tokens per minute, about 1.7k per image), and many calls of the partial run ended in 429s. We rerun it on real photos
   with a paid key on Friday.
 
+- **Finisher exists, off by default** (`finisher.enabled`, `xharness/finisher.py`): wrist-camera
+  look-then-move servo plus a stepped press, release and lift for the last centimeter, replacing
+  Wall-X there. In sim it seats the part in 16 of 16 trials from 5 to 15 mm off and all three
+  cases finish with Wall-X leaving a 5 to 15 mm error (without it they jam). It aborts to HOLD
+  on doubt, every chunk passes the action filter, and a failed check loops back a bounded number
+  of times. **It generates arm motion, so it depends on the organizer answer to question 13.**
+  All its numbers are placeholders, and the sim draws holes on top of parts (a real part may hide
+  its hole), so none of this is proven on hardware.
+
 ### Proven vs still a guess
 
 | Proven (measured or tested) | Still a guess (needs the robot or organizers) |
@@ -60,7 +69,7 @@ Claude Code.
 | Harness survives Wall-X crashes, timeouts, bad output, reconnects (sim) | Are we allowed to replace Wall-X's output at all? |
 | No false "done" in 60 sim runs with a vision model lying 10% of the time | Real vision accuracy on real camera frames |
 | Qwen on Groq answers correctly in about 1.2 s | Gripper mm opening; is the gripper reading measured or commanded? |
-| 44 tests pass | Snap force of our prints; holder approval; venue latency |
+| 55 tests pass | Snap force of our prints; holder approval; venue latency |
 
 ### Architecture options (we can mix these)
 

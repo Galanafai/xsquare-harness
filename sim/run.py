@@ -51,15 +51,16 @@ VLM_FAULTS = {
 async def run_case(case: int, *, noise: float = 0.003, wallx_faults: FaultPlan | None = None,
                    vlm_faults: dict | None = None, drop_connection: tuple[int, ...] = (),
                    real_wallx: bool = False, max_requests: int = 150, seed: int = 0,
+                   place_offset_mm: tuple[float, float] | None = None,
                    cfg: HarnessConfig | None = None, verbose: bool = True) -> dict:
     world = World(case, seed=seed)
-    task = load_task(CASE_TASKS[case])
+    cfg = cfg or load_config(None)
+    task = load_task(CASE_TASKS[case], cfg.finisher.enabled)
     workdir = Path(tempfile.mkdtemp(prefix="xharness-sim-"))
 
     vlm = FakeVLM(world, faults=vlm_faults or {}, slow_s=3.0, seed=seed)
     vlm_url = vlm.start()
 
-    cfg = cfg or load_config(None)
     cfg.listen.host, cfg.listen.port = "127.0.0.1", 0
     cfg.verifier.chat_url, cfg.verifier.model, cfg.verifier.timeout_s = vlm_url, "fake-oracle", 2.0
     cfg.supervisor.state_file = str(workdir / "supervisor_state.json")
@@ -72,14 +73,14 @@ async def run_case(case: int, *, noise: float = 0.003, wallx_faults: FaultPlan |
         cfg.wallx.endpoint = os.environ.get("WALLX_ENDPOINT", cfg.wallx.endpoint)
         cfg.wallx.headers_file = os.environ.get("WALLX_HEADERS_FILE", cfg.wallx.headers_file)
     else:
-        fake_wallx = FakeWallX(world, noise_m=noise, faults=wallx_faults, seed=seed)
+        fake_wallx = FakeWallX(world, noise_m=noise, faults=wallx_faults, seed=seed, place_offset_mm=place_offset_mm)
         wallx_server = await fake_wallx.serve()
         port = wallx_server.sockets[0].getsockname()[1]
         cfg.wallx.endpoint = f"ws://127.0.0.1:{port}"
         cfg.wallx.headers_file = ""
         cfg.wallx.first_request_timeout_s = cfg.wallx.request_timeout_s = 2.0
 
-    supervisor = Supervisor([task], cfg.supervisor, Verifier(cfg.verifier))
+    supervisor = Supervisor([task], cfg.supervisor, Verifier(cfg.verifier), cfg.finisher, cfg.filter)
     relay = Relay(cfg, supervisor, verbose=verbose)
     from websockets.asyncio.server import serve
 
@@ -172,13 +173,18 @@ def main() -> None:
                         help="client disconnects after this request number (repeatable)")
     parser.add_argument("--real-wallx", action="store_true", help="use the real endpoint (needs WALLX_HEADERS_FILE)")
     parser.add_argument("--max-requests", type=int, default=150)
+    parser.add_argument("--finisher", action="store_true", help="enable the finisher (final alignment and press)")
+    parser.add_argument("--place-offset-mm", type=float, nargs=2, metavar=("LO", "HI"),
+                        help="fake Wall-X leaves every align this far off (mm range)")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--json", action="store_true", help="print the result as JSON")
     args = parser.parse_args()
 
+    cfg = load_config(None)
+    cfg.finisher.enabled = args.finisher
     result = asyncio.run(run_case(
-        args.case, noise=args.noise,
+        args.case, cfg=cfg, place_offset_mm=tuple(args.place_offset_mm) if args.place_offset_mm else None, noise=args.noise,
         wallx_faults=FaultPlan.standard() if args.faults == "standard" else None,
         vlm_faults=VLM_FAULTS[args.vlm_faults], drop_connection=tuple(args.drop_connection),
         real_wallx=args.real_wallx, max_requests=args.max_requests, seed=args.seed, verbose=not args.quiet,

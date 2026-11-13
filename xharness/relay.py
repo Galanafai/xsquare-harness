@@ -26,6 +26,7 @@ Rules this file enforces, each one a failure mode of the example harness:
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import time
 from pathlib import Path
 
@@ -50,7 +51,7 @@ from .protocol import (
     validate_request,
 )
 from .recorder import SessionRecorder
-from .supervisor import ACT, HOLD, PASS, Decision, Supervisor
+from .supervisor import ACT, FINISH, HOLD, PASS, Decision, Supervisor
 
 
 class UpstreamError(RuntimeError):
@@ -264,6 +265,8 @@ class Relay:
         if decision.kind == HOLD:
             reply = pack(build_response(embodiment, hold_actions(state)))
             outcome = "hold"
+        elif decision.kind == FINISH and decision.actions is not None:
+            reply, outcome = self._finisher_reply(embodiment, state, decision, rec, index)
         else:
             if decision.kind == ACT:
                 request["instruction"] = decision.instruction
@@ -285,6 +288,20 @@ class Relay:
         )
         self._status(index, decision, outcome, elapsed)
         return reply
+
+    def _finisher_reply(self, embodiment, state, decision, rec, index):
+        """Send the finisher's own chunk, after one more pass through the action filter.
+
+        The finisher already checked it; this second check is the relay's own gate
+        (forced to enforce). Any doubt: HOLD. Nothing here touches Wall-X.
+        """
+        response = build_response(embodiment, decision.actions)
+        gate = ActionFilter(dataclasses.replace(self.cfg.filter, mode="enforce", freeze_idle_arm=False))
+        result = gate.check(response, embodiment, state, decision.active_arm)
+        rec.event("finisher_chunk", index=index, ok=result.ok, violations=result.violations, stats=result.stats)
+        if not result.ok:
+            return pack(build_response(embodiment, hold_actions(state))), "hold_finisher_filter"
+        return pack(response), "finisher"
 
     async def _forward(self, index, out_frame, request, state, embodiment, goal, decision, upstream, rec):
         try:

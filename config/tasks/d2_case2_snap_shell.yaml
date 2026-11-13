@@ -5,6 +5,9 @@
 # hole while it presses, so "seated?" cannot be judged then. Each part goes
 #   grasp -> align -> push (contact check) -> release (open and lift)
 #   -> seated (a `hold: true` stage: arms stay still, vision looks at the hole).
+# With finisher.enabled the push and release stages are replaced by a `finisher` stage
+# (xharness/finisher.py: servo, press, release, lift) and a failed seated check loops back
+# to grasp, at most max_loops times. Without it (default) the stages marked `only: wallx` run.
 # Confirmations: 2 for grasp, align, push and seated; 1 for release.
 
 task_id: d2_case2_snap_shell
@@ -36,7 +39,17 @@ stages:
     budget_requests: 10
     max_retries: 2
 
+  - id: finish_shell
+    type: finisher
+    only: finisher
+    part: shell
+    target: "shell_seat"
+    budget_requests: 90
+    on_fail_goto: align_shell
+    max_loops: 2
+
   - id: push_shell
+    only: wallx
     instructions:
       - "Press the green shell down onto the white handle."
       - "Push the green shell down until it snaps onto the toy."
@@ -48,6 +61,7 @@ stages:
     max_retries: 2
 
   - id: release_shell
+    only: wallx
     instructions:
       - "Release the green shell and move the arm up and away."
       - "Open the gripper and lift the arm straight up."
@@ -59,6 +73,8 @@ stages:
     optional: true
 
   - id: seated_shell
+    on_fail_goto: grasp_shell
+    max_loops: 2
     done:
       question: "Is the green shell sitting flat on the white handle with no gap, fully snapped on?"
       confirmations: 2

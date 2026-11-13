@@ -116,6 +116,18 @@ robot client -> `xharness/relay.py` -> Wall-X; replies -> `action_filter.py` -> 
 - `action_filter.py`: shape/NaN checks, row-0 jump, per-row step, workspace box,
   gripper range. Default `enforce` = unsafe chunk replaced with HOLD. Optional
   freeze of the idle arm (off by default).
+- `finisher.py`: OFF by default (`finisher.enabled`). Training-free final alignment and press
+  for the last centimeter, replacing Wall-X there: detect the held part (HSV color) and the
+  hole (round dark blob) in the active wrist camera, look-then-move servo with an uncalibrated
+  2x2 image Jacobian (explore ~3 mm per axis, Broyden refine, gain 0.6, 3 mm cap, z and
+  rotation frozen), 1 mm stepped press to `max_press_depth_mm` or contact, release, lift 3 cm.
+  Every chunk passes `action_filter.py` (forced to enforce); any doubt (low confidence, error
+  grew twice, arm did not move, bad Jacobian) aborts to HOLD. Stages: YAML `type: finisher`
+  with `only: finisher`; Wall-X-only push/release stages are `only: wallx`. A failed finisher
+  or seated check loops back (`on_fail_goto`, `max_loops`). It is harness-generated arm motion:
+  depends on the organizer answer to docs/ORGANIZER_QUESTIONS.md #13. All its numbers are
+  placeholders (MEASURE ON SITE); the sim draws holes on top of parts, a simplification (a real
+  part can hide its hole). Sim: `python -m sim.run --case 3 --finisher --place-offset-mm 5 15`.
 - `recorder.py`: `runs/<time>_<session>/events.jsonl` + camera frames.
 - `tasks.py`, `parts.py`, `config.py`: task YAML format, Demo 2 parts, config + env.
 - Why fixed stages instead of an LLM planner: no-touch runs need predictable,
@@ -159,13 +171,13 @@ robot client -> `xharness/relay.py` -> Wall-X; replies -> `action_filter.py` -> 
 
 ## Commands
 
-    python -m pytest -q                     # 40 tests, about 10 s, no network
+    python -m pytest -q                     # 55 tests, about 40 s, no network
     python -m xharness --check              # config + tasks + warnings
     python -m xharness --host <LAN IP>      # run the harness (never 127.0.0.1 on site)
     python -m xharness --hold-only          # every reply is HOLD (never calls Wall-X)
     python -m xharness --no-prewarm         # skip the startup warm-up request to Wall-X
     python -m xharness --reset-state        # forget progress between practice runs
-    python -m sim.run --case 1|2|3 [--faults standard] [--vlm-faults messy|hostile] [--drop-connection N] [--real-wallx]
+    python -m sim.run --case 1|2|3 [--finisher --place-offset-mm LO HI] [--faults standard] [--vlm-faults messy|hostile] [--drop-connection N] [--real-wallx]
     python tools/probe_wallx.py             # needs WALLX_API_KEY or WALLX_HEADERS_FILE
 
 ## Rules for Claude

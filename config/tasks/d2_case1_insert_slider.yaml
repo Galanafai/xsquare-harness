@@ -12,6 +12,9 @@
 # hole while it presses, so "seated?" cannot be judged then. Each part goes
 #   grasp -> align -> push (contact check) -> release (open and lift)
 #   -> seated (a `hold: true` stage: arms stay still, vision looks at the hole).
+# With finisher.enabled the push and release stages are replaced by a `finisher` stage
+# (xharness/finisher.py: servo, press, release, lift) and a failed seated check loops back
+# to grasp, at most max_loops times. Without it (default) the stages marked `only: wallx` run.
 # Confirmations: 2 for grasp, align, push and seated; 1 for release.
 
 task_id: d2_case1_insert_slider
@@ -42,7 +45,17 @@ stages:
     budget_requests: 10
     max_retries: 2
 
+  - id: finish_slider
+    type: finisher
+    only: finisher
+    part: slider
+    target: "handle_slot"
+    budget_requests: 90
+    on_fail_goto: align_slider
+    max_loops: 2
+
   - id: push_slider
+    only: wallx
     instructions:
       - "Insert the orange slider into the white handle."
       - "Push the orange slider down into the handle slot."
@@ -54,6 +67,7 @@ stages:
     max_retries: 2
 
   - id: release_slider
+    only: wallx
     instructions:
       - "Release the orange slider and move the arm up and away."
       - "Open the gripper and lift the arm straight up."
@@ -65,6 +79,8 @@ stages:
     optional: true
 
   - id: seated_slider
+    on_fail_goto: grasp_slider
+    max_loops: 2
     done:
       question: "Is the orange slider seated inside the white handle's slot (not resting on top, not tilted out)?"
       confirmations: 2

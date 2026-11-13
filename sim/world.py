@@ -73,6 +73,8 @@ class Slot:
     tol_m: float  # xy capture tolerance (chamfer lead-in included)
     requires: str | None = None  # another slot that must be filled first
     filled_by: str | None = None
+    surface_z: float = 0.0  # height of the surface the hole opens in (for the fake camera)
+    radius_m: float = 0.008  # visible hole radius (for the fake camera)
 
 
 @dataclass
@@ -81,6 +83,9 @@ class Arm:
     rpy: np.ndarray = field(default_factory=lambda: np.zeros(3))
     gripper: float = GRIPPER.max_command  # measured reading
     holding: str | None = None
+    # After seating a part the arm cannot push lower than this (the part bottoms out).
+    stop_z: float | None = None
+    stop_xy: np.ndarray | None = None
 
 
 class World:
@@ -124,6 +129,11 @@ class World:
         self.slots["hole_b"] = Slot("hole_b", ("button_a", "button_b"), holder + [-0.015, 0.0], hole_z, 0.002 * tol,
                                     requires="shell_seat")
 
+        self.slots["handle_slot"].surface_z, self.slots["handle_slot"].radius_m = top, 0.008
+        self.slots["shell_seat"].surface_z, self.slots["shell_seat"].radius_m = top, 0.010
+        for name in ("hole_a", "hole_b"):
+            self.slots[name].surface_z, self.slots[name].radius_m = top + 0.0235, 0.0045  # drawn smaller than the 5.35 mm button half-width so the fake overlay never eats the part edge the detector measures
+
         if case == 1:
             self._add_part("slider", np.array([0.33, 0.09]) + jitter)
         elif case == 2:
@@ -163,6 +173,11 @@ class World:
             target = self._constrain_held(arm_name, held, target)
             if arm.holding is None:  # it just got seated: the slot holds it now
                 held = None
+        if arm.stop_z is not None:  # the seated part bottoms out: contact for the finisher
+            if np.linalg.norm(target[:2] - arm.stop_xy) <= 0.02:
+                target[2] = max(target[2], arm.stop_z)
+            else:
+                arm.stop_z = arm.stop_xy = None
         arm.pos, arm.rpy = target, np.asarray(rpy, dtype=float)
 
         opening = GRIPPER.opening_mm(grip_cmd)
@@ -203,13 +218,15 @@ class World:
                 continue
             xy_err = float(np.linalg.norm(target[:2] - slot.xy))
             bottom = target[2] - part.size[2] / 2
-            if xy_err > 0.03 or bottom > slot.seat_z + 0.02:
+            if xy_err > 0.02 or bottom > slot.seat_z + 0.02:  # buttons holes are 30 mm apart: do not react to the neighbor
                 continue  # not near this slot
             if xy_err <= slot.tol_m and bottom <= slot.seat_z:
                 part.pos = np.array([slot.xy[0], slot.xy[1], slot.seat_z])
                 part.seated_in, part.fixed, part.held_by = slot.name, True, None
                 slot.filled_by = part.name
                 self.arms[arm_name].holding = None
+                self.arms[arm_name].stop_z = slot.seat_z + part.size[2] / 2
+                self.arms[arm_name].stop_xy = slot.xy.copy()
                 self.log(f"{part.name} seated in {slot.name} (xy error {xy_err*1000:.1f} mm)")
             elif bottom <= slot.seat_z + 0.01 and xy_err > slot.tol_m:
                 target[2] = slot.seat_z + 0.01 + part.size[2] / 2  # jams on the rim
@@ -291,5 +308,10 @@ STAGE_TRUTH = {
     "align_purple": lambda w: w.held_above("button_b", ["hole_a", "hole_b"], 0.02),
     "push_purple": lambda w: w.seated("button_b"),
     "release_purple": lambda w: w.arms_clear(),
+    # finisher stages: done once the part is seated and the arms are clear again
+    "finish_slider": lambda w: w.seated("slider") and w.arms_clear(),
+    "finish_shell": lambda w: w.seated("shell") and w.arms_clear(),
+    "finish_teal": lambda w: w.seated("button_a") and w.arms_clear(),
+    "finish_purple": lambda w: w.seated("button_b") and w.arms_clear(),
     "seated_both": lambda w: w.seated("button_a") and w.seated("button_b"),
 }

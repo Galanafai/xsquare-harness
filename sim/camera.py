@@ -25,7 +25,8 @@ COLORS = {
     "teal": (30, 170, 170),
     "purple": (140, 70, 190),
     "table": (90, 90, 95),
-    "gripper": (30, 30, 30),
+    "gripper": (120, 120, 125),  # light, so fingers are not mistaken for dark holes
+    "hole": (12, 12, 20),
 }
 
 
@@ -98,7 +99,17 @@ def _render(world: World, cam: PinholeCamera) -> Image.Image:
             items.append((float(depth.mean()), _hull(uv), COLORS["gripper"]))
     for _, poly, color in sorted(items, key=lambda it: -it[0]):  # far to near
         if len(poly) >= 3:
-            draw.polygon(poly, fill=color, outline=(20, 20, 20))
+            draw.polygon(poly, fill=color, outline=(70, 70, 75))
+    # Open holes and slots as dark circles drawn on top, so the finisher can see
+    # them even when a held part is above them (a sim simplification: a real part hides its hole).
+    for slot in world.slots.values():
+        if slot.filled_by or (slot.requires and not world.slots[slot.requires].filled_by):
+            continue
+        ang = np.linspace(0, 2 * np.pi, 40, endpoint=False)
+        ring = np.stack([slot.xy[0] + slot.radius_m * np.cos(ang), slot.xy[1] + slot.radius_m * np.sin(ang),
+                         np.full_like(ang, slot.surface_z)], axis=1)
+        uv, _ = cam.project(ring)
+        draw.polygon([tuple(p) for p in uv], fill=COLORS["hole"])
     return img
 
 
@@ -115,7 +126,8 @@ def render_views(world: World) -> dict[str, str]:
     views = {"front": _jpeg_b64(_render(world, front))}
     for arm, cam_name in (("left_ee", "left_wrist"), ("right_ee", "right_wrist")):
         tip = world.arms[arm].pos
-        wrist = PinholeCamera(eye=tip + [-0.03, 0, 0.10], target=tip + [0.02, 0, -0.05], up=[1, 0, 0],
-                              width=256, height=192, fov_deg=80)
+        # Looks straight down the gripper axis: a held part sits at the image center.
+        wrist = PinholeCamera(eye=tip + [0.0, 0, 0.12], target=tip + [0.0, 0, -0.10], up=[1, 0, 0],
+                              width=640, height=480, fov_deg=80)
         views[cam_name] = _jpeg_b64(_render(world, wrist))
     return views

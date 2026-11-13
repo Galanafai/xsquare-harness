@@ -45,13 +45,20 @@ class FaultPlan:
 
 class FakeWallX:
     def __init__(self, world: World, noise_m: float = 0.003, warmup_s: float = 0.0,
-                 latency_s: float = 0.0, faults: FaultPlan | None = None, seed: int = 0):
+                 latency_s: float = 0.0, faults: FaultPlan | None = None, seed: int = 0,
+                 place_offset_mm: tuple[float, float] | None = None):
         self.world = world
         self.noise_m = noise_m
         self.warmup_s = warmup_s
         self.latency_s = latency_s
         self.faults = faults or FaultPlan()
         self.rng = np.random.default_rng(seed)
+        # A fixed xy error (radius drawn once from this range, mm) left on every align and
+        # insert chunk, like a Wall-X that never lands exactly. None = only the small noise.
+        self.place_offset = np.zeros(2)
+        if place_offset_mm:
+            r, th = self.rng.uniform(*place_offset_mm) / 1000.0, self.rng.uniform(0, 2 * np.pi)
+            self.place_offset = np.array([r * np.cos(th), r * np.sin(th)])
         self.requests = 0
         self.instructions: list[str] = []
 
@@ -145,7 +152,7 @@ class FakeWallX:
             if slot is not None:
                 size_z = self.world.parts[held].size[2]
                 hover = slot.seat_z + size_z / 2 + (0.03 if verb == "align" else -0.004)
-                goal = np.array([slot.xy[0], slot.xy[1], hover]) + noise
+                goal = np.array([slot.xy[0], slot.xy[1], hover]) + noise + np.append(self.place_offset, 0.0)
                 goal_grip = 0.0
         elif verb == "release":
             arm = min(ARMS, key=lambda a: grip[a])  # the arm that is closed
