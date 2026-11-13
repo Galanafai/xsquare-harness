@@ -51,6 +51,9 @@ class Verdict:
     reason: str
     latency_ms: float
     error: str = ""  # non-empty when we fell back to "unsure" because of a failure
+    # Diagnostics for tools/eval_verifier.py. The supervisor ignores them.
+    thinking: bool = False  # reply carried reasoning text (think tags or a reasoning field)
+    completion_tokens: int = 0
 
     @property
     def yes(self) -> bool:
@@ -122,13 +125,15 @@ class Verifier:
             return Verdict("unsure", "verifier disabled or not configured", 0.0, error="disabled")
         try:
             body = self._build_body(check_id, question, request, context)
-            text = await asyncio.wait_for(
+            text, meta = await asyncio.wait_for(
                 asyncio.to_thread(self._post, body), timeout=self.cfg.timeout_s
             )
             parsed = extract_json(text)
             if parsed is None:
-                return Verdict("unsure", "unparseable reply", _ms(started), error=f"unparseable: {text[:120]!r}")
-            return Verdict(normalize_answer(parsed.get("answer")), str(parsed.get("reason", ""))[:300], _ms(started))
+                return Verdict("unsure", "unparseable reply", _ms(started),
+                               error=f"unparseable: {text[:120]!r}", **meta)
+            return Verdict(normalize_answer(parsed.get("answer")), str(parsed.get("reason", ""))[:300],
+                           _ms(started), **meta)
         except asyncio.TimeoutError:
             return Verdict("unsure", "timeout", _ms(started), error="timeout")
         except urllib.error.HTTPError as err:
@@ -163,7 +168,7 @@ class Verifier:
         body.update(self.cfg.extra_body)
         return body
 
-    def _post(self, body: dict) -> str:
+    def _post(self, body: dict) -> tuple[str, dict]:
         # Some providers sit behind Cloudflare, which rejects Python's default
         # "Python-urllib/3.x" user agent with HTTP 403 (seen on Groq). Name ourselves.
         headers = {"Content-Type": "application/json", "User-Agent": USER_AGENT}
@@ -173,7 +178,11 @@ class Verifier:
         # The socket timeout is a backstop; asyncio.wait_for enforces the real one.
         with urllib.request.urlopen(req, timeout=self.cfg.timeout_s + 2) as resp:
             result = json.load(resp)
-        return result["choices"][0]["message"]["content"] or ""
+        message = result["choices"][0]["message"]
+        text = message.get("content") or ""
+        thinking = bool(message.get("reasoning") or message.get("reasoning_content") or "<think>" in text)
+        tokens = int((result.get("usage") or {}).get("completion_tokens") or 0)
+        return text, {"thinking": thinking, "completion_tokens": tokens}
 
 
 def _error_body(err: urllib.error.HTTPError, limit: int = 200) -> str:
