@@ -1,0 +1,81 @@
+# Demo 2, case 2: insert the orange core into the blue main body.
+# Prop: the team's four-part design (xharness/parts.py; v12 at 200% by default). The
+# organizers' A-board cases still describe the older shell, slider and two-button toy;
+# these cases follow the team design's assembly order and are PLACEHOLDERS until the
+# organizers confirm cases for the new prop.
+#
+# `goal` MUST equal the case `instruction` in the WebUI task JSON
+# (config/webui/local_d2_snapfit.json), because the robot client sends it on
+# every request and the supervisor uses it to pick this file.
+#
+# Colors come from xharness/parts.py (green cover, blue main, orange core, purple pin,
+# white grip pads). Change them here if the prints differ.
+#
+# Stage pattern: the gripper covers the target while it presses, so "seated?" is only
+# judged after it lets go: grasp -> align -> push -> release -> seated (`hold: true`,
+# arms still, vision looks). Confirmations: 2, except 1 for release.
+#
+# Real motion: the core slides in along its length (about half inserted, released, then
+# pushed the rest of the way). The sim models it as a straight press. No finisher stage:
+# the finisher only does straight-down presses.
+
+task_id: d2_case2_core
+goal: "Insert the orange core into the blue main body."
+context: >
+  Tabletop toy assembly. The blue main body with the green cover closed lies at
+  the center. A loose orange core (about 54 x 177 mm) with a white rib between two
+  slots lies on the table to one side.
+
+stages:
+  - id: grasp_core
+    instructions:
+      - "Pick up the orange core by the white rib."
+      - "Grasp the orange core and lift it."
+    done:
+      question: "Is the orange core held between one gripper's fingers and lifted off the table?"
+      confirmations: 2
+    budget_requests: 12
+    max_retries: 2
+
+  - id: align_core
+    instructions:
+      - "Move the orange core above the opening in the blue main body."
+      - "Hold the orange core just above the blue main body, lined up with its opening."
+    done:
+      question: "Is the orange core directly above the blue main body's opening and lined up with it, within about 3 cm?"
+      confirmations: 2
+      require_still: true
+    budget_requests: 10
+    max_retries: 2
+
+  - id: push_core
+    instructions:
+      - "Insert the orange core into the blue main body."
+      - "Push the orange core fully into the blue main body."
+    done:
+      question: "Is the orange core pushed into the blue main body, touching it with no visible gap?"
+      confirmations: 2
+      require_still: true
+    budget_requests: 12
+    max_retries: 2
+
+  - id: release_core
+    instructions:
+      - "Release the orange core and move the arm up and away."
+      - "Open the gripper and lift the arm straight up."
+    done:
+      question: "Is the gripper open and lifted clear above the toy, no longer touching the core?"
+      confirmations: 1
+    budget_requests: 6
+    max_retries: 1
+    optional: true
+
+  - id: seated_core
+    on_fail_goto: grasp_core
+    max_loops: 2
+    done:
+      question: "Is the orange core fully inside the blue main body (not sticking out, not resting on top)?"
+      confirmations: 2
+    budget_requests: 6
+    max_retries: 1
+    hold: true

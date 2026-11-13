@@ -2,7 +2,7 @@
 
 This is NOT a physics simulator. It exists to exercise harness logic
 (stages, retries, done detection, HOLD, faults) against something that
-behaves like the task, using the real Demo 2 part dimensions.
+behaves like the task, using the team's Demo 2 prop dimensions (cover, main, core, pin).
 
 What it models:
 * Two arms whose fingertip point follows the commanded end-effector position.
@@ -11,7 +11,7 @@ What it models:
   which is the signal the supervisor uses to tell "holding" from "empty".
 * Insertion: a held part pressed down onto its slot seats only if it is
   within the slot's xy tolerance. Outside the tolerance it jams on top.
-  Tolerances are deliberately tight for the buttons (the K = 4.5 step).
+  Capture tolerances come from the design's lead-ins (xharness/parts.py FIT_MM).
 
 What it does not model: contact forces, friction, tipping, joint limits,
 real camera optics. Treat all numbers here as fake unless marked measured.
@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from xharness.parts import GRIPPER, PARTS
+from xharness.parts import FIT_MM, GRIPPER, PARTS
 from xharness.protocol import ARMS, ACTION_ROWS
 
 # Start poses are the example state from the API Tutorial (real numbers, in the
@@ -52,6 +52,7 @@ class SimPart:
     size: np.ndarray  # metres (x, y, z)
     color: str
     pos: np.ndarray  # centre of the bottom face, metres
+    grip_mm: float = 0.0  # width the fingers close on (grip pad, rib or flat handle)
     fixed: bool = False  # sits in the holder; cannot be picked
     seated_in: str | None = None
     held_by: str | None = None
@@ -62,7 +63,7 @@ class SimPart:
 
     @property
     def grasp_width_mm(self) -> float:
-        return float(min(self.size[0], self.size[1]) * 1000)
+        return float(self.grip_mm)
 
 
 @dataclass
@@ -114,39 +115,44 @@ class World:
     def _add_part(self, name: str, xy, z: float = 0.0, fixed: bool = False) -> SimPart:
         spec = PARTS[name]
         part = SimPart(name, np.array(spec.size_mm) / 1000.0, spec.color,
-                       np.array([xy[0], xy[1], z], dtype=float), fixed=fixed)
+                       np.array([xy[0], xy[1], z], dtype=float), grip_mm=spec.grasp_width_mm, fixed=fixed)
         self.parts[name] = part
         return part
 
     def _build(self, case: int, tol: float) -> None:
+        """The four-part prop (xharness/parts.py). Every step is modelled as "bring the part over
+        its target and press down", which is a simplification: the real cover swings onto pivots
+        and the real core slides in along its length. Only the pin is a straight press."""
         holder = np.array([0.40, 0.0])  # FAKE position
-        handle = self._add_part("handle", holder, z=0.0, fixed=True)
+        main = self._add_part("main", holder, z=0.0, fixed=True)
         jitter = self.rng.uniform(-0.02, 0.02, size=2)  # position generalization
-        top = handle.top_z
-        self.slots["handle_slot"] = Slot("handle_slot", ("slider",), holder.copy(), top - 0.015, 0.004 * tol)
-        self.slots["shell_seat"] = Slot("shell_seat", ("shell",), holder.copy(), top - 0.008, 0.005 * tol,
-                                        requires="handle_slot")
-        hole_z = top + 0.0235 - 0.010
-        self.slots["hole_a"] = Slot("hole_a", ("button_a", "button_b"), holder + [0.015, 0.0], hole_z, 0.002 * tol,
-                                    requires="shell_seat")
-        self.slots["hole_b"] = Slot("hole_b", ("button_a", "button_b"), holder + [-0.015, 0.0], hole_z, 0.002 * tol,
-                                    requires="shell_seat")
+        sink = 0.010  # a seated part's bottom ends this far below the surface it enters (FAKE)
 
-        self.slots["handle_slot"].surface_z, self.slots["handle_slot"].radius_m = top, 0.008
-        self.slots["shell_seat"].surface_z, self.slots["shell_seat"].radius_m = top, 0.010
-        for name in ("hole_a", "hole_b"):
-            self.slots[name].surface_z, self.slots[name].radius_m = top + 0.0235, 0.0045  # drawn smaller than the 5.35 mm button half-width so the fake overlay never eats the part edge the detector measures
+        def slot(name, part, xy, surface_z, requires=None):
+            spec = PARTS[part]
+            s = Slot(name, (part,), np.asarray(xy, float), surface_z - sink, FIT_MM[part] / 1000.0 * tol,
+                     requires=requires)
+            # Drawn smaller than the part's top width so the fake overlay never eats the part edge
+            # the finisher measures.
+            s.surface_z, s.radius_m = surface_z, 0.4 * spec.top_width_mm / 1000.0
+            self.slots[name] = s
+            return s
+
+        cover_seat = slot("cover_seat", "cover", holder, main.top_z)
+        cover_top = cover_seat.seat_z + PARTS["cover"].size_mm[2] / 1000.0
+        core_slot = slot("core_slot", "core", holder + [0.0, -0.03], cover_top, requires="cover_seat")
+        core_top = core_slot.seat_z + PARTS["core"].size_mm[2] / 1000.0
+        slot("pin_bore", "pin", holder + [0.0, 0.04], core_top, requires="core_slot")
 
         if case == 1:
-            self._add_part("slider", np.array([0.33, 0.09]) + jitter)
+            self._add_part("cover", np.array([0.26, 0.0]) + jitter)
         elif case == 2:
-            self._seat("slider", "handle_slot")
-            self._add_part("shell", np.array([0.33, 0.09]) + jitter)
+            self._seat("cover", "cover_seat")
+            self._add_part("core", np.array([0.27, 0.0]) + jitter)
         elif case == 3:
-            self._seat("slider", "handle_slot")
-            self._seat("shell", "shell_seat")
-            self._add_part("button_a", np.array([0.32, 0.07]) + jitter)
-            self._add_part("button_b", np.array([0.32, 0.12]) + jitter)
+            self._seat("cover", "cover_seat")
+            self._seat("core", "core_slot")
+            self._add_part("pin", np.array([0.29, 0.06]) + jitter)
         else:
             raise ValueError("case must be 1, 2 or 3")
 
@@ -221,7 +227,7 @@ class World:
                 continue
             xy_err = float(np.linalg.norm(target[:2] - slot.xy))
             bottom = target[2] - part.size[2] / 2
-            if xy_err > 0.02 or bottom > slot.seat_z + 0.02:  # buttons holes are 30 mm apart: do not react to the neighbor
+            if xy_err > 0.02 or bottom > slot.seat_z + 0.02:  # far from this slot: ignore it
                 continue  # not near this slot
             if xy_err <= slot.tol_m and bottom > slot.seat_z and bottom < slot.seat_z + SNAP_RESISTANCE_M:
                 # Snap resistance: within tolerance the part stops here and only seats if it is
@@ -297,33 +303,19 @@ class World:
 
 # Ground-truth answers for each stage id used in config/tasks/*.yaml.
 # The fake vision model uses these; a real one has to look at images.
-STAGE_TRUTH = {
-    "grasp_slider": lambda w: w.is_held("slider"),
-    "align_slider": lambda w: w.held_above("slider", ["handle_slot"], 0.03),
-    # push_*: the sim seats a part the moment a press lands inside the slot
-    # tolerance, so "pushed down onto it" is true exactly when it is seated.
-    # (Real push questions are looser: contact, no gap, hole hidden by the gripper.)
-    "push_slider": lambda w: w.seated("slider"),
-    "release_slider": lambda w: w.arms_clear(),
-    "seated_slider": lambda w: w.seated("slider"),
-    "grasp_shell": lambda w: w.is_held("shell"),
-    "align_shell": lambda w: w.held_above("shell", ["shell_seat"], 0.03),
-    "push_shell": lambda w: w.seated("shell"),
-    "release_shell": lambda w: w.arms_clear(),
-    "seated_shell": lambda w: w.seated("shell"),
-    "grasp_teal": lambda w: w.is_held("button_a"),
-    "align_teal": lambda w: w.held_above("button_a", ["hole_a", "hole_b"], 0.02),
-    "push_teal": lambda w: w.seated("button_a"),
-    "release_teal": lambda w: w.arms_clear(),
-    "seated_teal": lambda w: w.seated("button_a"),
-    "grasp_purple": lambda w: w.is_held("button_b"),
-    "align_purple": lambda w: w.held_above("button_b", ["hole_a", "hole_b"], 0.02),
-    "push_purple": lambda w: w.seated("button_b"),
-    "release_purple": lambda w: w.arms_clear(),
-    # finisher stages: done once the part is seated and the arms are clear again
-    "finish_slider": lambda w: w.seated("slider") and w.arms_clear(),
-    "finish_shell": lambda w: w.seated("shell") and w.arms_clear(),
-    "finish_teal": lambda w: w.seated("button_a") and w.arms_clear(),
-    "finish_purple": lambda w: w.seated("button_b") and w.arms_clear(),
-    "seated_both": lambda w: w.seated("button_a") and w.seated("button_b"),
-}
+# push_*: the sim seats a part the moment a press lands inside the slot tolerance,
+# so "pushed down onto it" is true exactly when it is seated.
+# (Real push questions are looser: contact, no gap, hole hidden by the gripper.)
+_TARGET = {"cover": ("cover_seat", 0.03), "core": ("core_slot", 0.03), "pin": ("pin_bore", 0.02)}
+
+STAGE_TRUTH = {}
+for _part, (_slot, _radius) in _TARGET.items():
+    STAGE_TRUTH.update({
+        f"grasp_{_part}": lambda w, p=_part: w.is_held(p),
+        f"align_{_part}": lambda w, p=_part, s=_slot, r=_radius: w.held_above(p, [s], r),
+        f"push_{_part}": lambda w, p=_part: w.seated(p),
+        f"release_{_part}": lambda w: w.arms_clear(),
+        f"seated_{_part}": lambda w, p=_part: w.seated(p),
+        # finisher stages: done once the part is seated and the arms are clear again
+        f"finish_{_part}": lambda w, p=_part: w.seated(p) and w.arms_clear(),
+    })

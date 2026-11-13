@@ -44,8 +44,8 @@ def test_client_reconnect_keeps_progress():
     r = run(case=3, drop_connection=(8, 20, 40), max_requests=150)
     assert r["reconnects"] == 3
     assert no_false_positives(r)
-    # Stages done before a reconnect are not repeated: grasp_teal appears once.
-    assert [row["stage"] for row in r["stages"]].count("grasp_teal") == 1
+    # Stages done before a reconnect are not repeated: grasp_pin appears once.
+    assert [row["stage"] for row in r["stages"]].count("grasp_pin") == 1
 
 
 def test_messy_vision_model_is_tolerated():

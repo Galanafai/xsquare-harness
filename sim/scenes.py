@@ -60,7 +60,7 @@ def _offset(xy, dx: float, dy: float):
 
 def _prepare(case: int, seed: int, seated_first: tuple[str, ...] = ()) -> World:
     world = World(case, seed=seed)
-    for name in seated_first:  # earlier buttons of case 3 are already in
+    for name in seated_first:  # parts that must already be in before this scene
         slot = world.free_slot_for(name)
         world._seat(name, slot.name)
     return world
@@ -151,17 +151,13 @@ def _release_scenes(task_id, case, stage_id, last_part, arm_pair, seated_before=
 def all_scenes() -> list[Scene]:
     """Scenes for every stage of the three Demo 2 cases."""
     s: list[Scene] = []
-    s += _part_stage_scenes("d2_case1_insert_slider", 1, "slider", "handle_slot",
-                            ("grasp_slider", "align_slider", "seated_slider"), ("left_ee", "right_ee"), 0.03)
-    s += _release_scenes("d2_case1_insert_slider", 1, "release_slider", "slider", ("left_ee", "right_ee"))
-    s += _part_stage_scenes("d2_case2_snap_shell", 2, "shell", "shell_seat",
-                            ("grasp_shell", "align_shell", "seated_shell"), ("left_ee", "right_ee"), 0.03, seed0=100)
-    s += _release_scenes("d2_case2_snap_shell", 2, "release_shell", "shell", ("left_ee", "right_ee"))
-    s += _part_stage_scenes("d2_case3_press_buttons", 3, "button_a", "hole_a",
-                            ("grasp_teal", "align_teal", "seated_teal"), ("right_ee", "left_ee"), 0.02, seed0=200)
-    s += _part_stage_scenes("d2_case3_press_buttons", 3, "button_b", "hole_b",
-                            ("grasp_purple", "align_purple", "seated_both"), ("right_ee", "left_ee"), 0.02,
-                            seated_first=("button_a",), seed0=300)
-    s += _release_scenes("d2_case3_press_buttons", 3, "release_purple", "button_b", ("right_ee", "left_ee"),
-                        seated_before=("button_a",))
+    s += _part_stage_scenes("d2_case1_cover", 1, "cover", "cover_seat",
+                            ("grasp_cover", "align_cover", "seated_cover"), ("left_ee", "right_ee"), 0.03)
+    s += _release_scenes("d2_case1_cover", 1, "release_cover", "cover", ("left_ee", "right_ee"))
+    s += _part_stage_scenes("d2_case2_core", 2, "core", "core_slot",
+                            ("grasp_core", "align_core", "seated_core"), ("left_ee", "right_ee"), 0.03, seed0=100)
+    s += _release_scenes("d2_case2_core", 2, "release_core", "core", ("left_ee", "right_ee"))
+    s += _part_stage_scenes("d2_case3_pin", 3, "pin", "pin_bore",
+                            ("grasp_pin", "align_pin", "seated_pin"), ("right_ee", "left_ee"), 0.02, seed0=200)
+    s += _release_scenes("d2_case3_pin", 3, "release_pin", "pin", ("right_ee", "left_ee"))
     return s

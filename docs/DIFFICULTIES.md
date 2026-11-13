@@ -19,15 +19,15 @@ code; "Still open" is what code cannot fix.
 
 ## 1. Zero-shot Wall-X may not manage precision insertion
 
-The K-setting step (button snap, +-0.5 mm, axial, hole hidden by the
-gripper) is the hardest class of task for any zero-shot VLA.
+The K-setting step (pin snap, axial, hole hidden by the gripper; the
+pin's tapered nose gives about +-2.4 mm capture at v12) is the hardest class of task for any zero-shot VLA.
 
 * Handled in: `config/tasks/*.yaml` split each case into grasp / align /
   press stages with retries, so grasp and align still earn partial credit.
   `sim/` uses tight tolerances so jams and retries get exercised.
 * Still open: measure real success rates per stage on day one (10 trials
-  each). Physical help: an approved holder with chamfered lead-ins, buttons
-  presented upright, the loosest fit we can justify.
+  each). Physical help: an approved holder with chamfered lead-ins, the pin
+  presented so it needs no turn in the gripper, the loosest fit we can justify.
 
 ## 2. A harness failure becomes a robot failure
 
@@ -53,10 +53,11 @@ A missed "done" means wasted minutes and maybe undoing the work.
 * Still open: real vision-model accuracy on real camera frames. Replay
   recorded frames from `runs/*/frames/` to tune questions.
 
-## 4. Grasping 10.7 mm buttons
+## 4. Grasping the pin by its flat handle
 
-Smaller than most fingertips, easy to knock over, and the gripper hides
-the hole once it holds one.
+The handle is 4 mm thick at v12 (2 mm at v11), the gripper hides the hole once
+it holds the pin, and the pin lies on its side for pickup (it may need a 90 degree
+turn before it can go in).
 
 * Handled in: `parts.py` graspability report; stage questions ask about
   "held and lifted", not just "touching".

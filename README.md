@@ -64,7 +64,7 @@ Claude Code.
 
 | Proven (measured or tested) | Still a guess (needs the robot or organizers) |
 |---|---|
-| Wall-X auth, latency, reply format | Can Wall-X grasp a 10.7 mm button or seat the slider? |
+| Wall-X auth, latency, reply format | Can Wall-X grasp the pin by its 4 mm handle, or slide the core in? |
 | Wall-X output is random call to call (65 mm mean); wording changes it no more than that | Does the robot client accept our hold-still replies? |
 | Harness survives Wall-X crashes, timeouts, bad output, reconnects (sim) | Are we allowed to replace Wall-X's output at all? |
 | No false "done" in 60 sim runs with a vision model lying 10% of the time | Real vision accuracy on real camera frames |
@@ -93,8 +93,9 @@ Claude Code.
 4. **Physics sim (X2Real):** skip, or timebox (for example 3 hours, RTX GPU needed)?
 5. **Who owns what:** prints and holder / vision model and real photos /
    organizer comms and runbook.
-6. **Print colors:** task files assume white handle, orange slider, green shell,
-   teal and purple buttons. Update `config/tasks/` and `xharness/parts.py` to match.
+6. **Prop version and colors:** the harness now uses the team's four-part prop (green cover,
+   blue main body, orange core, purple pin, white grip pads), v12 at 200% by default
+   (`PROP_VERSION` in `xharness/parts.py`). Update colors there and in `config/tasks/` if the prints differ.
 
 ### Things to think about
 
@@ -182,7 +183,7 @@ On site, see [docs/RUNBOOK.md](docs/RUNBOOK.md).
    gripper, and the case goal (the `instruction` from the WebUI task JSON).
 2. The supervisor finds the task whose `goal` matches and looks at the
    current stage. Every `verify_every` requests it asks the vision model one
-   question ("Is the teal button held by a gripper, off the table?").
+   question ("Is the purple pin held by a gripper, off the table?").
 3. Two consecutive "yes" (plus optional gripper and stillness checks) advance
    the stage. "unsure" never counts. Out of budget: retry with the next
    phrasing. Out of retries: the task fails and the arms hold still.
@@ -211,7 +212,7 @@ On site, see [docs/RUNBOOK.md](docs/RUNBOOK.md).
 | Value | Where | How to get it |
 |---|---|---|
 | Gripper opening in mm vs command (0..1.526) | `xharness/parts.py` | Calipers at 4 command values |
-| Gripper reading when closed on a part vs on nothing | `supervisor.grasp_band`, `open_above` | Close on a button, then on air; read `runs/*/events.jsonl` |
+| Gripper reading when closed on a part vs on nothing | `supervisor.grasp_band`, `open_above` | Close on the pin handle, then on air; read `runs/*/events.jsonl` |
 | Workspace boxes | `filter.workspace` | `tools/workspace_from_runs.py runs/` |
 | HOLD chunk format accepted by the client | `protocol.build_response` | Compare with `probe_out/response_first.msgpack`; test HOLD once with the arm clear |
 | Part colors | `config/tasks/*.yaml`, `xharness/parts.py` | Match what you actually printed |
@@ -222,5 +223,5 @@ On site, see [docs/RUNBOOK.md](docs/RUNBOOK.md).
 `sim/` is kinematic, not physics: no forces, no tipping, no real optics.
 It is for harness logic (stages, retries, faults, reconnects, done
 detection). It says nothing about whether Wall-X can actually do the task.
-Insertion tolerances (2 mm buttons, 4 mm slider, 5 mm shell) are guesses
-that make precision failures show up.
+Capture tolerances come from the prop's CAD lead-ins (`parts.FIT_MM`; the cover's is a rough
+estimate), and every step is modelled as a straight press, which the real cover and core are not.

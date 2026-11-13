@@ -5,7 +5,7 @@ starts, nobody touches a keyboard, controller or phone.**
 
 ## Before leaving home
 
-- [ ] Printed parts in every color, plus spares (buttons break and roll away)
+- [ ] Printed parts in every color, plus spares (pins break and roll away)
 - [ ] Holder / fixture, tape for marking positions
 - [ ] Laptop charger, USB Ethernet adapter, Ethernet cable
 - [ ] `python -m pytest -q` passes on the laptop you bring
@@ -29,7 +29,7 @@ starts, nobody touches a keyboard, controller or phone.**
 - [ ] **Finisher inputs (only if harness-generated motion is approved).** (a) Hand-place each
       part fully seated, read the gripper z in `observation.state` from a recorded request, and
       write it as `seated_z` (metres) on that finisher stage in `config/tasks/*.yaml`; without it
-      the finisher refuses to press. (b) Wrist photos with a held button over the hole at 0, 2
+      the finisher refuses to press. (b) Wrist photos with a held pin over the hole at 0, 2
       and 5 mm offsets: is the hole visible, and where does it appear when aligned
       (`finisher.target_offset_px`)? The sim draws holes on top of parts; a real part may hide them.
       (c) Also read the gripper z with the part resting aligned on top of its hole, before the
@@ -48,7 +48,7 @@ starts, nobody touches a keyboard, controller or phone.**
 ## Hour 1 to 2: measure what the code marks as placeholder
 
 - [ ] Gripper: calipers at commands 0, 0.5, 1.0, 1.526 -> `xharness/parts.py`
-- [ ] Close on a button vs on nothing; read gripper values in the run log
+- [ ] Close on the pin handle vs on nothing; read gripper values in the run log
       -> `supervisor.grasp_band`, `open_above`
 - [ ] After a few runs: `python tools/workspace_from_runs.py runs/` -> `filter.workspace`
 
@@ -68,12 +68,12 @@ For each stage, 10 trials, write the success count:
 
 | stage | successes / 10 |
 |---|---|
-| grasp slider | |
-| insert slider | |
-| grasp shell | |
-| snap shell | |
-| grasp button | |
-| press button | |
+| grasp cover | |
+| close cover on main | |
+| grasp core | |
+| insert core | |
+| grasp pin | |
+| press pin | |
 
 ## Between runs
 

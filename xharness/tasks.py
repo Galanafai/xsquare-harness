@@ -6,17 +6,17 @@ supervisor picks the task whose `goal` matches it.
 
 Example (see config/tasks/ for real ones):
 
-    task_id: d2_case3_press_buttons
-    goal: "Press the two buttons into the toy."
-    context: "Toy assembly sits in the holder at the center; buttons on the left."
+    task_id: d2_case3_pin
+    goal: "Insert the purple pin into the toy until it snaps in."
+    context: "Toy assembly at the center; the pin lies on the table to one side."
     stages:
-      - id: grasp_teal
+      - id: grasp_pin
         active_arm: right_ee
         instructions:
-          - "Pick up the teal button with the right arm."
-          - "Grasp the small teal button."
+          - "Pick up the purple pin with the right arm."
+          - "Grasp the purple pin by its white handle."
         done:
-          question: "Is the teal button held between the right gripper fingers, off the table?"
+          question: "Is the purple pin held between the right gripper fingers, off the table?"
           confirmations: 2
           gripper_holding: right_ee
         budget_requests: 12

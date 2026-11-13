@@ -17,9 +17,9 @@ listen:
   port: 8001
 
 task_files:
-  - config/tasks/d2_case1_insert_slider.yaml
-  - config/tasks/d2_case2_snap_shell.yaml
-  - config/tasks/d2_case3_press_buttons.yaml
+  - config/tasks/d2_case1_cover.yaml
+  - config/tasks/d2_case2_core.yaml
+  - config/tasks/d2_case3_pin.yaml
 
 verifier:
   enabled: true

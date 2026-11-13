@@ -1,7 +1,7 @@
 """Render the fake world into the three JPEG camera views the protocol needs.
 
 Flat-shaded boxes through a pinhole camera. Good enough for a vision model
-to answer "is the teal box in the gripper?" during offline prompt tests,
+to answer "is the purple pin in the gripper?" during offline prompt tests,
 and for the protocol to carry realistic-size images. Not photorealistic.
 
 Front camera faces the robot, so (like the real rig) the robot's RIGHT arm
@@ -22,7 +22,7 @@ COLORS = {
     "white": (235, 235, 230),
     "orange": (240, 140, 30),
     "green": (60, 170, 70),
-    "teal": (30, 170, 170),
+    "blue": (45, 105, 170),
     "purple": (140, 70, 190),
     "table": (90, 90, 95),
     "gripper": (120, 120, 125),  # light, so fingers are not mistaken for dark holes

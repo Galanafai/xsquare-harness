@@ -36,3 +36,6 @@ Their answers, paraphrased, with what each means for the harness.
 4. **Holder approval:** pending photos.
 8. **Network:** wired LAN or Wi-Fi with client isolation? Ask at check-in, along
    with the local Wall-X URL and whether the same key works there.
+17. **New prop, new cases?** Our Demo 2 prop changed to four parts (cover, main body, core,
+    one snap pin; possibly at 200% size) instead of the shell, slider and two buttons. Do
+    the A/B-board cases and the scored actions (and K) get updated to match? Send photos.

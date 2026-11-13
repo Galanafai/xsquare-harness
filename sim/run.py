@@ -37,9 +37,9 @@ from .fake_wallx import FakeWallX, FaultPlan
 from .world import World
 
 CASE_TASKS = {
-    1: "config/tasks/d2_case1_insert_slider.yaml",
-    2: "config/tasks/d2_case2_snap_shell.yaml",
-    3: "config/tasks/d2_case3_press_buttons.yaml",
+    1: "config/tasks/d2_case1_cover.yaml",
+    2: "config/tasks/d2_case2_core.yaml",
+    3: "config/tasks/d2_case3_pin.yaml",
 }
 VLM_FAULTS = {
     "none": {},

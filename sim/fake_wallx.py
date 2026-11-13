@@ -28,7 +28,8 @@ from xharness.protocol import ACTION_ROWS, ARMS, ProtocolError, build_response, 
 
 from .world import World
 
-COLOR_TO_PART = {"orange": "slider", "green": "shell", "teal": "button_a", "purple": "button_b", "white": "handle"}
+# Held parts first: "move the green cover above the blue main body" must pick the cover.
+COLOR_TO_PART = {"green": "cover", "orange": "core", "purple": "pin", "blue": "main"}
 MAX_TRAVEL_PER_CHUNK = 0.15  # metres; keeps the fake arm speed plausible
 
 

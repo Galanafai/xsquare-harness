@@ -58,7 +58,7 @@ from .protocol import ARMS, ACTION_ROWS, build_response, hold_actions
 HUE_RANGES = {
     "orange": (10.0, 45.0),
     "green": (85.0, 150.0),
-    "teal": (160.0, 200.0),
+    "blue": (195.0, 240.0),
     "purple": (255.0, 305.0),
 }
 MIN_SATURATION, MIN_VALUE = 0.35, 0.30
@@ -176,7 +176,7 @@ class Finisher:
         self.filter = ActionFilter(replace(filter_cfg, mode="enforce", freeze_idle_arm=False))
         self.part_key = part
         self.color = PARTS[part].color
-        self.width_mm = PARTS[part].grasp_width_mm
+        self.width_mm = PARTS[part].top_width_mm  # what the wrist camera measures across the part
         self.arm = arm
         self.phase = "look"
         self.J: np.ndarray | None = None  # px per mm, 2x2

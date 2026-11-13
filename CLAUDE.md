@@ -132,7 +132,7 @@ robot client -> `xharness/relay.py` -> Wall-X; replies -> `action_filter.py` -> 
   approved by the organizers (Nov 12 reply, docs/ORGANIZER_QUESTIONS.md #13); still off until seated_z and the other placeholders are measured. All its numbers are
   placeholders (MEASURE ON SITE, including each stage's `seated_z`). The sim draws holes on top of
   parts, a simplification: **a real held part may hide its hole** (Saturday hour 1 takes wrist
-  photos of a held button at 0, 2 and 5 mm offsets to check). The sim also models snap
+  photos of a held pin at 0, 2 and 5 mm offsets to check). The sim also models snap
   resistance: a part in tolerance stops 1.5 mm above its seat and seats only if pushed through. Sim: `python -m sim.run --case 3 --finisher --place-offset-mm 5 15`.
 - `recorder.py`: `runs/<time>_<session>/events.jsonl` + camera frames.
 - `tasks.py`, `parts.py`, `config.py`: task YAML format, Demo 2 parts, config + env.
@@ -141,15 +141,28 @@ robot client -> `xharness/relay.py` -> Wall-X; replies -> `action_filter.py` -> 
 
 ## Demo 2 specifics
 
-- Parts (STL bounding boxes, mm): handle 70x40x20, solid slider 60x25.1x25.1,
-  shell 70x33x23.5, buttons 10.7x10.7x12.1 (x2). Source: MakerWorld "Fidget gravity
-  knife, carrot kid, little radish" (plates 1, 2, 4, 6). Colors in parts.py and
-  the task YAMLs are planned colors: update to match the prints.
+- **Prop (changed 2026-11-13):** the team's own four-part design, not the MakerWorld toy:
+  A cover (green), B main body (blue), C core (orange), D integrated pin (purple), white
+  grip pads and orientation arrows. One pin replaces the two buttons. Source: the team's
+  design repo, `demos/demo_2_snapfit_carrot/design/` (v11 full size, v12 at 200%, newest).
+  `xharness/parts.py` holds both; `PROP_VERSION = "v12"`. v12 STL boxes (mm): cover
+  66x200x54, main 80x200x52, core 54x177x17, pin 20x20x54. Grip features: pads 10 mm,
+  core rib 8 mm, pin flat handle 4 mm (half at v11). Not yet printed or measured.
+- The precision step is now the pin: tapered barbed nose (5.6 mm nose to 9.8 mm head with
+  flex slots, into an 8 mm bore at v11), so capture is about +-1.2 mm at v11 and +-2.4 mm
+  at v12 (`parts.FIT_MM`). A 2x flex snap likely needs about 4x the force (beam scaling
+  estimate, unverified): hand-press a print before any robot press. UNKNOWN: the pin lies
+  on its side for pickup; if the bore points up it needs a 90 degree turn in the gripper.
 - K = 4.5 comes from F4 Precision_Insert: snap depth +-0.5 mm, axial press, hole
   hidden by the gripper. Other scored actions: C1 hold 3.9, C3 mate shell 3.3,
-  G1 grasp button 2.5, G1 grasp part 2.3, F2 slider cycle 2.3, P2 place 1.3.
-- A-board cases visible so far: 1 insert slider, 2 snap on shell, 3 press buttons.
-  Cases 4 to 6 were cut off in our export. Each case starts pre-assembled up to its step.
+  G1 grasp button 2.5, G1 grasp part 2.3, F2 slider cycle 2.3, P2 place 1.3. These were
+  scored for the old toy; whether they change for the new prop is an organizer question.
+- The organizers' A-board cases (1 insert slider, 2 snap on shell, 3 press buttons) describe
+  the old toy. Our task files follow the new prop's assembly order and are placeholders until
+  the organizers confirm cases: 1 cover onto main (`d2_case1_cover`), 2 core into main
+  (`d2_case2_core`), 3 pin (`d2_case3_pin`). Each case starts pre-assembled up to its step.
+  Only case 3 has a finisher stage: the cover swings onto pivots and the core slides in
+  along its length, neither is a straight-down press (the sim models all three as presses).
 - Zero-shot Wall-X is weakest at precision insertion. Expect grasp and align stages
   to work far more often than press stages. A passive holder with chamfers
   (pending organizer approval) is the biggest physical help.
@@ -177,7 +190,7 @@ robot client -> `xharness/relay.py` -> Wall-X; replies -> `action_filter.py` -> 
 
 ## Commands
 
-    python -m pytest -q                     # 55 tests, about 40 s, no network
+    python -m pytest -q                     # 59 tests, about 25 s, no network
     python -m xharness --check              # config + tasks + warnings
     python -m xharness --host <LAN IP>      # run the harness (never 127.0.0.1 on site)
     python -m xharness --hold-only          # every reply is HOLD (never calls Wall-X)

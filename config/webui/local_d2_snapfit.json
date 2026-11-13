@@ -23,47 +23,46 @@
   "data": [
     {
       "case_id": 1,
-      "instruction": "Insert the orange slider into the white handle.",
+      "instruction": "Attach the green cover to the blue main body.",
       "image_path": "",
       "env_description": {
-        "handle": "white, in the holder at the center",
-        "slider": "orange, loose on the table to one side"
+        "main": "blue main body, lying at the center of the table",
+        "cover": "green, with a white grip pad, loose on the table to one side"
       },
       "scores_dict": {
-        "Grasp the slider": 3,
-        "Slider aligned above the handle": 2,
-        "Slider seated in the handle": 5
+        "Grasp the cover": 3,
+        "Cover aligned above the main body": 2,
+        "Cover closed on the main body": 5
       },
       "timeout": 480
     },
     {
       "case_id": 2,
-      "instruction": "Snap the green shell onto the toy.",
+      "instruction": "Insert the orange core into the blue main body.",
       "image_path": "",
       "env_description": {
-        "toy": "white handle with orange slider fitted, in the holder at the center",
-        "shell": "green, loose on the table to one side"
+        "toy": "blue main body with the green cover closed, at the center",
+        "core": "orange, with a white rib, loose on the table to one side"
       },
       "scores_dict": {
-        "Grasp the shell": 3,
-        "Shell aligned over the toy": 2,
-        "Shell snapped on": 5
+        "Grasp the core": 3,
+        "Core aligned with the opening": 2,
+        "Core fully inserted": 5
       },
       "timeout": 480
     },
     {
       "case_id": 3,
-      "instruction": "Press the two buttons into the toy.",
+      "instruction": "Insert the purple pin into the toy until it snaps in.",
       "image_path": "",
       "env_description": {
-        "toy": "assembled with shell, in the holder at the center, two button holes on top",
-        "buttons": "teal and purple, standing upright on the table"
+        "toy": "main body, cover and core assembled at the center, pin hole showing through the slot",
+        "pin": "purple, with a white flat handle, loose on the table"
       },
       "scores_dict": {
-        "Grasp the first button": 2,
-        "First button pressed in": 3,
-        "Grasp the second button": 2,
-        "Second button pressed in": 3
+        "Grasp the pin": 2,
+        "Pin aligned above the hole": 3,
+        "Pin snapped in": 5
       },
       "timeout": 480
     }

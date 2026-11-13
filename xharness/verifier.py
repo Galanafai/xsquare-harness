@@ -1,8 +1,8 @@
 """Ask a vision model narrow yes/no questions about the current scene.
 
 Design choice: the vision model never *plans*. The supervisor owns the plan
-(a fixed list of stages). The model only answers questions like "Is the teal
-button held by the right gripper?" with yes / no / unsure. Narrow questions
+(a fixed list of stages). The model only answers questions like "Is the purple
+pin held by the right gripper?" with yes / no / unsure. Narrow questions
 are faster, cheaper, easier to test offline, and fail safely.
 
 Robustness rules (each one fixes a real failure of the example harness):

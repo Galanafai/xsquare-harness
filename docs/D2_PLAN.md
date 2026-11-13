@@ -42,11 +42,29 @@ doc only covers "if we pick D2, how do we finish it?"
    fine-tuning only got charger plugging to about a third, and it costs
    data collection plus overnight training we don't have.
 
+## Update, Nov 13: the prop changed
+
+The team designed its own four-part prop (green cover, blue main body, orange core,
+purple pin with a white handle; v12 is 200% size), replacing the shell, slider and two
+buttons. The harness, sim and task files now use it (`xharness/parts.py`). What changes:
+
+- **The press is now one pin, with a tapered barbed nose.** It is guided in from about
+  2.4 mm off center at v12 (1.2 mm at v11). Against the arm's +-1 mm, that is a much
+  better margin than the old buttons. The finisher is only used for the pin.
+- **The snap likely gets about 4x stiffer at 200%** (beam scaling estimate, unverified).
+  The depth limit and a hand-press test matter more, not less.
+- **The pin may need a 90 degree turn** in the gripper before it goes in, if it is picked
+  up lying on its side. Nothing we have does that yet. Ask the designer.
+- **The cover and core are not straight presses** (the cover swings onto pivots, the core
+  slides in along its length), so those cases stay Wall-X only.
+- **The organizers' cases still describe the old toy.** Send photos and ask them to confirm
+  cases for the new prop.
+
 ## Why D2 is so hard
 
 Three things stack up at the final press:
 
-- **Tolerance:** the button seats within about 0.5 mm, axially. The arm's own
+- **Tolerance:** the snap seats within about 0.5 mm, axially. The arm's own
   repeatability is about 1 mm.
 - **Blindness:** the gripper covers the hole exactly when precision matters,
   and there is no force sensor in the API.
@@ -68,7 +86,7 @@ Wall-X already does well.
   in 20 of 20 trials ([Huang et al.](https://pmc.ncbi.nlm.nih.gov/articles/PMC5017361)).
   That was on better hardware than ours, so it's precedent, not a promise.
 - **Our parts are easy to see.** Bright, known colors and known sizes (the
-  button is 10.7 mm wide), so simple color and shape detection should work
+  pin is 20 mm wide at v12), so simple color and shape detection should work
   without a learned model. Unverified until we have real photos.
 
 ## One possible answer: Wall-X carries, a small "finisher" finishes
@@ -96,7 +114,7 @@ Wall-X already does well.
 
 **Known risk: the held part may hide the hole.** The sim draws holes on top of
 parts, which a real camera will not. Saturday hour 1 takes wrist photos of a
-held button over the hole at 0, 2 and 5 mm offsets to see whether the hole is
+held pin over the hole at 0, 2 and 5 mm offsets to see whether the hole is
 visible at all (and, if not, we need a marker, a different camera angle or the
 Wall-X-only track).
 
@@ -122,7 +140,7 @@ column stays as the fallback if the finisher fails on hardware.
 - **Saturday, first hour:** get the local Wall-X URL, hold-still test, a 3 mm
   harness-move test (does the robot execute our own motion?), measured vs commanded
   test (question 15), then measure seated_z, first-contact height, the gripper,
-  and take wrist photos of a held button (RUNBOOK).
+  and take wrist photos of a held pin (RUNBOOK).
 - **After that:** practice runs on the A board, tuning only from recordings.
 
 ## Risks, honestly
@@ -144,5 +162,5 @@ column stays as the fallback if the finisher fails on hardware.
 
 1. Is D2 our demo, now that the finisher is allowed? (Still a team call.)
 2. If the finisher fails on hardware, do we run D2 for partial credit or switch?
-3. Who brings the printed parts, and can someone hand-press a button before
+3. Who brings the printed parts, and can someone hand-press the pin before
    Saturday? Organizers also want photos of the prints and any holder.
