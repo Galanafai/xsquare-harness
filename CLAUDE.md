@@ -2,17 +2,18 @@
 
 ## What this project is
 
-Our team's (Yanzhou Pan, Kuangyuan Sun, Galanafai Windross) agent harness for the
-BRIGHT 2026 Embodied Agent Hackathon, run by X Square Robot.
+Our team's agent harness for the BRIGHT 2026 Embodied Agent Hackathon, run by
+X Square Robot.
 Event: Sat Nov 14, 10:00 to Sun Nov 15, 20:00 PT, 170 St Germain Ave, San Francisco.
 
-We are targeting **Demo 2: SnapFit Carrot**, assembling a 3D-printed snap-fit fidget
-toy (handle, slider, shell, two buttons) with a dual-arm robot. Fallback demo if
-Demo 2 proves infeasible on site: Demo 5 MedSort (K = 2.3).
+Which demo we run is an open team decision; do not assume or push one.
+Our confirmed demos and their K: D1 Mood on the Rocks 3.5, D2 SnapFit Carrot 4.5, D3 CyberMagic 2.9, D4 SmartTea 4.0, D5 MedSort 2.3.
+Task files exist so far for Demo 2 (cases 1 to 3, tested in sim) and Demo 5 (drafts,
+untested). The harness is demo-agnostic: a demo is a set of task YAMLs.
 
 ## Competition rules that shape the code
 
-- Final score = (sum of the 6 B-board case scores, 10 points each) x K. Demo 2 has K = 4.5.
+- Final score = (sum of the 6 B-board case scores, 10 points each) x K.
 - The A board is practice: 3 official runs plus unlimited self-tests, not scored.
   The B board is a blind test of ONE demo with ONE attempt; it decides the ranking.
   We may switch between our confirmed demos on site.

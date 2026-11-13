@@ -1,4 +1,4 @@
-# Demo 5 MedSort (fallback, K = 2.3). UNTESTED: no sim world exists for Demo 5,
+# Demo 5 MedSort (K = 2.3). UNTESTED: no sim world exists for Demo 5,
 # so these stages have never run through sim/run.py or the verifier eval.
 #
 # ASSUMPTIONS to confirm against the real A-board case text before use:

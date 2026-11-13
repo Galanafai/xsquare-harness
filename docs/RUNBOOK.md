@@ -38,7 +38,7 @@ starts, nobody touches a keyboard, controller or phone.**
       start a run, confirm the arms do not move at all. If they move or the
       client errors, HOLD chunks are not accepted: tell Claude / the team.
 
-## Skill measurement (decide Demo 2 go / no-go here)
+## Skill measurement (evidence for the demo decision)
 
 For each stage, 10 trials, write the success count:
 

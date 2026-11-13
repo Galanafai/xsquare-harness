@@ -5,8 +5,7 @@ code; "Still open" is what code cannot fix.
 
 ## Facts from the rules that shape everything
 
-* **Final score = (sum of the 6 B-board case scores) x K.** Demo 2 has
-  K = 4.5, so 1 point on Demo 2 is worth about 2 points on Demo 5 (K = 2.3).
+* **Final score = (sum of the 6 B-board case scores) x K.** Our confirmed demos and their K: D1 Mood on the Rocks 3.5, D2 SnapFit Carrot 4.5, D3 CyberMagic 2.9, D4 SmartTea 4.0, D5 MedSort 2.3.
 * **B board: one demo, one attempt, blind.** We may switch between our
   confirmed demos on site if one proves unsuitable.
 * **No touching any keyboard, controller or phone once a run starts.**

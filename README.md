@@ -1,13 +1,14 @@
 # xsquare-harness
 
-The agent harness for our BRIGHT 2026 Embodied Agent Hackathon entry
-(X Square desktop dual-arm robot, Wall-X VLA, Demo 2 "SnapFit Carrot").
+An agent harness for the BRIGHT 2026 Embodied Agent Hackathon
+(X Square desktop dual-arm robot, Wall-X VLA). The harness itself is
+demo-agnostic: each demo is a set of task files.
 
 ## Team status (Nov 12): read this first
 
 This is a **baseline so we're not starting from zero on Saturday, not the
-plan.** Everything here is open for the team to change. Built by Galanafai
-with Claude and Claude Code.
+plan.** Everything here is open for the team to change. Built with Claude and
+Claude Code.
 
 ### What's done
 
@@ -25,7 +26,7 @@ with Claude and Claude Code.
   idle, exact reply format (our hold-still replies copy it).
 - **Vision model wired in:** Qwen (`qwen/qwen3.8-27b`) on Groq answers
   correctly in about 1.2 s. Accuracy eval tooling exists (`tools/eval_verifier.py`).
-- **Task files:** Demo 2 cases 1 to 3 and Demo 5 fallback drafts
+- **Task files:** Demo 2 cases 1 to 3 (tested in sim) and Demo 5 drafts (untested). Other demos would need their own files
   (`config/tasks/`), plus matching WebUI JSONs (`config/webui/`).
 - **Docs:** [DIFFICULTIES](docs/DIFFICULTIES.md), [RUNBOOK](docs/RUNBOOK.md),
   [ORGANIZER_QUESTIONS](docs/ORGANIZER_QUESTIONS.md),
@@ -54,9 +55,10 @@ with Claude and Claude Code.
 
 ### Team decisions
 
-1. **Demo 2 or Demo 5?** Demo 2 scores up to 4.5x, but the press steps are the
-   riskiest for Wall-X. Demo 5 (K = 2.3) is mostly pick and place. What success
-   rate on Saturday morning makes us switch?
+1. **Which demo?** Our confirmed demos and their K: D1 Mood on the Rocks 3.5, D2 SnapFit Carrot 4.5, D3 CyberMagic 2.9, D4 SmartTea 4.0, D5 MedSort 2.3. Higher K multiplies the score, but
+   each demo stresses Wall-X differently (precision insertion, liquids,
+   deformable grasps, pick and place). What evidence do we want before choosing,
+   and what would make us switch on site?
 2. **Planner style:** B, C, D, or a mix.
 3. **Vision budget:** Groq free tier allows only about one 3-camera check per
    minute. Groq paid, self-hosted Qwen on RunPod, or fewer cameras per check?
@@ -71,7 +73,7 @@ with Claude and Claude Code.
 - The biggest unknowns are physical. Saturday's first two hours of
   measurement (see RUNBOOK) will tell us more than more code tonight.
 - The rules mention current/torque and depth data, but the Wall-X protocol
-  doesn't carry them. The Demo 2 proposal leans on current feedback.
+  doesn't carry them. Several of our proposals lean on current feedback.
 - The organizer email covers: replacing Wall-X output, who ends runs,
   current/torque access, holder approval, hold-still reply format.
 - The X Square fireside chat is Friday 4 PM at the venue: a chance to ask
