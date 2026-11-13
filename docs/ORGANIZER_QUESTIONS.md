@@ -36,5 +36,9 @@ Still open, most important first:
 11. **Does the client accept a reply that lacks Wall-X's diagnostic fields**
     (`server_timing`, `usage`, `rtc`, ...)? Our HOLD chunks contain only
     `embodiment`, `normalization` and `actions`.
-12. **Is the first-call warm-up (4.0 s here) per connection or per server?**
-    Matters if the client reconnects mid-run.
+12. Partly answered by our probe (2026-11-12): warm-up is NOT per connection.
+    A second connection opened while the first was live took 322 ms on its
+    first call, and the relay's fresh connection in the sim run took 292 ms.
+    The only slow call (4.0 s) was the first call after the endpoint had been
+    idle. Still open: does the server go cold after idling, and for how long?
+    If so, the client should send a throwaway request before the official run.

@@ -57,7 +57,7 @@ Demo 2 proves infeasible on site: Demo 5 MedSort (K = 2.3).
   `rotation_rpy[3]` (rad, R = Rz(yaw) Ry(pitch) Rx(roll)) and scalar `gripper`.
   Absolute values in the robot base frame. Preserve client extension fields like
   `control_context`. No RTC fields in sync mode. [doc]
-- Measured latency (2026-11-12, home network, n=5 steady): first call 4.0 s (warm-up),
+- Measured latency (2026-11-12, home network, n=5 steady): first call after idle 4.0 s (warm-up, not per connection),
   steady median 0.61 s, max 0.67 s. Server-side inference is about 85 ms; the rest is
   network. Relay timeouts: 20 s first call, 8 s steady. A request with a changed
   `control_context` took 3.2 s once. [measured]

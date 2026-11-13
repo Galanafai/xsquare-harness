@@ -184,6 +184,10 @@ def main() -> int:
             steady = timings[1:]
             say(f"steady calls: median {statistics.median(steady):.0f} ms, max {max(steady):.0f} ms (n={len(steady)})")
 
+        # ------------------------------------------------------------ 3b. warm-up: per connection or per server?
+        say("\n## 3b. Is the warm-up per connection or per server?")
+        say(_warmup_verdict(timings, _second_connection_timings(url, headers, images)))
+
         (out / "response_first.msgpack").write_bytes(replies[0] if isinstance(replies[0], bytes) else b"")
         first = unpack(replies[-1])
         say("\n## 4. Response layout (last steady reply)")
@@ -238,6 +242,43 @@ def main() -> int:
     (out / "report.md").write_text("\n".join(lines))
     print(f"\nreport written to {out / 'report.md'}. Paste it back to Claude or the team.")
     return 0
+
+
+def _second_connection_timings(url, headers, images) -> list[float]:
+    """Open a NEW connection while the first is still open; time its first two calls (ms)."""
+    out = []
+    with open_ws(url, headers) as ws2:
+        unpack(ws2.recv(timeout=30))
+        for _ in range(2):
+            t0 = time.monotonic()
+            ws2.send(pack(request(images, "Pick up the teal button.")))
+            ws2.recv(timeout=120)
+            out.append(1000 * (time.monotonic() - t0))
+    return out
+
+
+def _warmup_verdict(first_conn: list[float], second_conn: list[float]) -> str:
+    """Compare the second connection's first call with the first connection's.
+
+    A fast second connection rules out per-connection warm-up whatever the
+    server's state. Only if connection 1 was slow too does it show per-server.
+    """
+    steady = statistics.median(first_conn[1:]) if len(first_conn) > 1 else second_conn[1]
+    c1, c2 = first_conn[0], second_conn[0]
+    lines = [
+        f"connection 1 first call: {c1:.0f} ms, steady median {steady:.0f} ms",
+        f"connection 2 first call: {c2:.0f} ms, second call {second_conn[1]:.0f} ms",
+    ]
+    slow = 2 * steady + 500  # clearly slower than a normal call
+    if c2 > slow:
+        lines.append("VERDICT: warm-up is per CONNECTION (the new connection was slow too).")
+    elif c1 > slow:
+        lines.append("VERDICT: warm-up is per SERVER (connection 1 was slow, the new connection was fast).")
+    else:
+        lines.append("NOT per connection (the new connection was fast). Connection 1 was fast too, so the "
+                     "server was already warm: per-server versus idle-timeout cannot be told apart. "
+                     "Repeat after the endpoint has been idle for a while.")
+    return "\n".join(lines)
 
 
 def _without_front(req: dict) -> dict:
