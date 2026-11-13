@@ -44,3 +44,22 @@ Still open, most important first:
     explanation: the first probe hit a cold server and other users keep it warm
     now (unverified). Still open: whether it can go cold at the venue or
     overnight. The relay pre-warm costs one request and is cheap insurance.
+13. **May the harness generate its own arm motion for the final press, instead
+    of Wall-X?** Zero-shot Wall-X is weakest at precision insertion. We would
+    send our own short, slow, straight-down motion through the same client
+    path, only for the press step.
+14. **May the harness set `control_context`, and what do its slots mean?**
+    Probe result (2026-11-12): slot values must be null or a number in [-1, 1]
+    (a normalized encoding, not mm or ms), and only `eff_delay_ms`,
+    `grip_delay_ms` and `z_offset_mm` are trained; the other four are rejected
+    as "not a trained parameter". What are the units, the center and scale
+    behind the [-1, 1] encoding, and the meaning of the startup defaults
+    (left: eff_delay 0.674, grip_delay 0.337, z_offset 0.339; right: 0.450,
+    -0.112, 0.289)? Is `z_offset_mm` the intended way to bias press depth?
+15. **Are the EE pose and gripper values in `observation.state` measured or
+    commanded?** This decides whether gripper stall detection (holding versus
+    empty) can work at all. Question 6 asks it for the gripper; this covers the
+    pose too (stillness checks and workspace limits use it).
+16. **Is there a maximum safe press depth or force** for the snap fits (and a
+    contact or current limit at which the arm stops)? We need a bound for any
+    press motion we add, and for what we tell Wall-X.
