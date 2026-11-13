@@ -28,8 +28,8 @@ class WallXConfig:
     endpoint: str = "wss://maas-api.x2robot.com/v1/vla/wallx"
     headers_file: str = ""  # path to JSON headers; env WALLX_HEADERS_FILE wins
     open_timeout_s: float = 15.0
-    first_request_timeout_s: float = 60.0  # CUDA graph warm-up on first call
-    request_timeout_s: float = 20.0
+    first_request_timeout_s: float = 5.0  # measured steady median 0.61 s, max 0.67 s (n=5)  # measured warm-up 4.0 s (probe 2026-11-12, n=1)
+    request_timeout_s: float = 5.0  # measured steady median 0.61 s, max 0.67 s (n=5)
     reconnect_attempts: int = 1  # per failed request; we never replay actions
 
 

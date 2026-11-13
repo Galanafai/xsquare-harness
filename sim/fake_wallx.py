@@ -24,7 +24,7 @@ from websockets.asyncio.server import ServerConnection, serve
 from websockets.exceptions import ConnectionClosed
 
 from xharness.parts import GRIPPER
-from xharness.protocol import ACTION_ROWS, ARMS, ProtocolError, build_response, pack, unpack, validate_request
+from xharness.protocol import ACTION_ROWS, ARMS, ProtocolError, build_response, pack, unpack, validate_control_context, validate_request
 
 from .world import World
 
@@ -73,6 +73,11 @@ class FakeWallX:
                     validate_request(request)
                 except ProtocolError as err:
                     await ws.send(pack({"error": {"code": "missing_field", "message": str(err)}}))
+                    continue
+                try:
+                    validate_control_context(request)
+                except ProtocolError as err:
+                    await ws.send(pack({"error": {"code": "control_context_invalid", "message": str(err)}}))
                     continue
                 self.instructions.append(request["instruction"])
 

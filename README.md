@@ -30,7 +30,7 @@ flowchart LR
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-python -m pytest -q                      # 26 tests, ~6 s, no network
+python -m pytest -q                      # 28 tests, ~6 s, no network
 python -m sim.run --case 3               # full Demo 2 case 3 on the fake robot
 python -m sim.run --case 3 --faults standard --vlm-faults hostile --drop-connection 6
 python -m xharness --check               # validate config + tasks, list warnings

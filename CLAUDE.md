@@ -50,13 +50,26 @@ Demo 2 proves infeasible on site: Demo 5 MedSort (K = 2.3).
   first (`model: wall-x`, `model_version: 2610-dualhead-v2` per docs), then strictly
   one request, one response. [doc]
 - Endpoint: `wss://maas-api.x2robot.com/v1/vla/wallx`. Auth = handshake HTTP
-  headers; the exact header name is undocumented. `tools/probe_wallx.py` finds it. [doc]
+  header `Authorization: Bearer <key>` (measured 2026-11-12 with `tools/probe_wallx.py`). [measured]
 - Request: `embodiment`, `normalization: "provided"`, non-empty string
   `instruction`, `observation.images.{front,left_wrist,right_wrist}` (JPEG base64,
   all three), `observation.state.{left_ee,right_ee}` with only `position[3]` (m),
   `rotation_rpy[3]` (rad, R = Rz(yaw) Ry(pitch) Rx(roll)) and scalar `gripper`.
   Absolute values in the robot base frame. Preserve client extension fields like
   `control_context`. No RTC fields in sync mode. [doc]
+- Measured latency (2026-11-12, home network, n=5 steady): first call 4.0 s (warm-up),
+  steady median 0.61 s, max 0.67 s. Server-side inference is about 85 ms; the rest is
+  network. Relay timeouts: 20 s first call, 5 s steady. A request with a changed
+  `control_context` took 3.2 s once. [measured]
+- Real replies use plain msgpack lists (not msgpack-numpy arrays) and carry extra
+  fields: `normalization`, `server_timing`, `usage`, `valid_rows`, `rtc`, `grip_check`,
+  `control_context`. Our HOLD chunks copy the plain-list layout plus `normalization`. [measured]
+- `control_context` (optional request field) must be an object per arm with exactly the
+  keys eff_delay_ms, lpf_T_ms, grip_delay_ms, grip_gain, grip_offset, z_offset_mm,
+  rot_offset_deg (null = masked). Omitted = server startup context (6 of 7 slots set);
+  all-null sets 0 slots. The relay forwards the client's field untouched. [measured]
+- Errors seen live: unknown_embodiment, missing_field, control_context_invalid. All keep
+  the connection open. [measured]
 - Response: `embodiment` echo + `actions.{left_ee,right_ee}.{position[32,3],
   rotation_rpy[32,3], gripper[32]}`. Row 31 repeats row 30. Rows 33.7 ms apart.
   BOTH arms always move. [doc]
@@ -136,7 +149,7 @@ robot client -> `xharness/relay.py` -> Wall-X; replies -> `action_filter.py` -> 
 
 ## Commands
 
-    python -m pytest -q                     # 26 tests, about 6 s, no network
+    python -m pytest -q                     # 28 tests, about 6 s, no network
     python -m xharness --check              # config + tasks + warnings
     python -m xharness --host <LAN IP>      # run the harness (never 127.0.0.1 on site)
     python -m xharness --hold-only          # every reply is HOLD

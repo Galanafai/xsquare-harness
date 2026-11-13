@@ -22,7 +22,14 @@ from dataclasses import dataclass, field
 from websockets.asyncio.client import connect
 from websockets.exceptions import ConnectionClosed
 
-from xharness.protocol import MAX_FRAME_BYTES, is_error_response, pack, unpack, validate_response
+from xharness.protocol import (
+    CONTROL_CONTEXT_PARAMS,
+    MAX_FRAME_BYTES,
+    is_error_response,
+    pack,
+    unpack,
+    validate_response,
+)
 
 from .camera import render_views
 from .world import STAGE_TRUTH, World
@@ -64,7 +71,7 @@ class FakeRobotClient:
             "normalization": "provided",
             "instruction": self.goal,
             "observation": {"images": render_views(self.world), "state": self.world.state()},
-            "control_context": {"left": [None] * 7, "right": [None] * 7},  # client extension field
+            "control_context": {arm: dict.fromkeys(CONTROL_CONTEXT_PARAMS) for arm in ("left", "right")},  # client extension field, shape per live handshake
         }
 
     async def run(self) -> ClientReport:

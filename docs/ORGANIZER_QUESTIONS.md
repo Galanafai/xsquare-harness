@@ -23,9 +23,18 @@ Still open, most important first:
    request, at what period, and is the arm still while it waits?**
 6. **Is `state.gripper` the measured follower position or the commanded
    value?** What opening in mm do 0 and 1.526 correspond to?
-7. **Which header does Wall-X authentication use?** (Our probe will tell
-   us; this is a fallback.) Is there an on-site Wall-X endpoint if the
-   cloud is slow?
+7. Answered by our probe: auth is `Authorization: Bearer <key>`. Still open:
+   is there an on-site Wall-X endpoint if the cloud is slow? Steady latency
+   from home was 0.61 s per request; what will it be from the venue?
 8. Robot-to-laptop network: wired LAN? Any client isolation on Wi-Fi?
 9. Does the arm protective-stop on contact or overcurrent, and how is it
    reset?
+10. **What `control_context` does the robot client send, and should we leave it
+    alone?** The server wants an object with 7 named slots per arm. Omitted, it
+    uses a startup context (6 slots set). Sending all-null sets 0 slots and one
+    such call took 3.2 s. We forward whatever the client sends.
+11. **Does the client accept a reply that lacks Wall-X's diagnostic fields**
+    (`server_timing`, `usage`, `rtc`, ...)? Our HOLD chunks contain only
+    `embodiment`, `normalization` and `actions`.
+12. **Is the first-call warm-up (4.0 s here) per connection or per server?**
+    Matters if the client reconnects mid-run.

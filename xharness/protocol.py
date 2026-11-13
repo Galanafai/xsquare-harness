@@ -58,6 +58,16 @@ RTC_FIELDS = ("use_rtc", "prev_action_chunk", "inference_delay")
 # Largest frame we accept (three JPEGs fit easily).
 MAX_FRAME_BYTES = 32 * 1024 * 1024
 
+# Keys of the optional `control_context` request field, per arm. Read from the
+# live handshake on 2026-11-12. Each value is a number, or null = masked.
+# Omitting the whole field makes the server use its startup context (6 of 7
+# slots set per arm); sending all-null sets 0 slots. The relay forwards the
+# client's field untouched and never judges it.
+CONTROL_CONTEXT_PARAMS = (
+    "eff_delay_ms", "lpf_T_ms", "grip_delay_ms", "grip_gain",
+    "grip_offset", "z_offset_mm", "rot_offset_deg",
+)
+
 # Error codes documented in the API Tutorial.
 KNOWN_ERROR_CODES = (
     "unknown_embodiment",
@@ -169,6 +179,25 @@ def validate_request(request: Any) -> None:
     read_state(request)  # raises on bad state
 
 
+def validate_control_context(request: dict) -> None:
+    """Mimic the real server's check of the optional control_context field.
+
+    Used by the fake Wall-X only. NOT called by the relay: that field belongs
+    to the organizers' client and only the real server should reject it.
+    """
+    ctx = request.get("control_context")
+    if ctx is None:
+        return
+    if not isinstance(ctx, dict):
+        raise ProtocolError("control_context must be an object")
+    for arm in ("left", "right"):
+        block = ctx.get(arm)
+        if not isinstance(block, dict):
+            raise ProtocolError(f"control_context.{arm} must be an object")
+        if set(block) != set(CONTROL_CONTEXT_PARAMS):
+            raise ProtocolError(f"control_context.{arm} must contain exactly {list(CONTROL_CONTEXT_PARAMS)}")
+
+
 def is_error_response(response: Any) -> bool:
     return isinstance(response, dict) and "error" in response
 
@@ -222,17 +251,22 @@ def validate_response(response: Any, embodiment: str) -> dict[str, dict[str, np.
 def build_response(embodiment: str, actions: dict[str, dict[str, np.ndarray]]) -> dict:
     """Wrap per-arm arrays in the public_v2 response envelope.
 
-    UNVERIFIED: we send float64 numpy arrays (msgpack-numpy), matching the
-    organizers' mock in test_harness.py. Compare against a real response
-    saved by tools/probe_wallx.py before relying on HOLD chunks on hardware.
+    Matches the real service as measured by tools/probe_wallx.py (2026-11-12):
+    top-level `embodiment`, `normalization: "provided"` and `actions`, with
+    position and rotation_rpy as plain nested lists of floats (32 x 3) and
+    gripper as a plain list (32). The real reply uses plain msgpack lists,
+    NOT msgpack-numpy ext arrays, so we convert with tolist(). Wall-X's extra
+    diagnostic fields (server_timing, usage, rtc, ...) are left out.
+    UNVERIFIED on hardware: that the robot client accepts a reply without them.
     """
     return {
         "embodiment": embodiment,
+        "normalization": "provided",
         "actions": {
             arm: {
-                "position": np.asarray(actions[arm]["position"], dtype=np.float64),
-                "rotation_rpy": np.asarray(actions[arm]["rotation_rpy"], dtype=np.float64),
-                "gripper": np.asarray(actions[arm]["gripper"], dtype=np.float64),
+                "position": np.asarray(actions[arm]["position"], dtype=np.float64).tolist(),
+                "rotation_rpy": np.asarray(actions[arm]["rotation_rpy"], dtype=np.float64).tolist(),
+                "gripper": np.asarray(actions[arm]["gripper"], dtype=np.float64).tolist(),
             }
             for arm in ARMS
         },

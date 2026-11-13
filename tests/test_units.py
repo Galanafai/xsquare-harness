@@ -230,3 +230,29 @@ def test_gripper_holding_requires_stall(tmp_path):
     # Measured 0.30 while commanded 0.0: stalled on a part -> ask vision -> done.
     held = make_request(goal="g", grip=0.30)
     assert run(sup.decide(held, read_state(held))).kind == HOLD
+
+
+def test_hold_wire_format_matches_real_reply():
+    """Real Wall-X replies use plain msgpack lists (no numpy ext) and echo normalization."""
+    import msgpack
+
+    state = read_state(make_request())
+    raw = msgpack.unpackb(pack(build_response(EMB, hold_actions(state))), raw=False)  # no numpy hook
+    assert raw["normalization"] == "provided" and raw["embodiment"] == EMB
+    block = raw["actions"]["right_ee"]
+    assert isinstance(block["position"], list) and len(block["position"]) == ACTION_ROWS
+    assert isinstance(block["position"][0], list) and len(block["position"][0]) == 3
+    assert isinstance(block["gripper"], list) and len(block["gripper"]) == ACTION_ROWS
+
+
+def test_control_context_shape_matches_live_server():
+    """The live server rejects a list-shaped control_context; the fake must too."""
+    from xharness.protocol import CONTROL_CONTEXT_PARAMS, validate_control_context
+
+    good = {arm: dict.fromkeys(CONTROL_CONTEXT_PARAMS) for arm in ("left", "right")}
+    validate_control_context({"control_context": good})
+    validate_control_context({})  # omitted is fine
+    with pytest.raises(ProtocolError):
+        validate_control_context({"control_context": {"left": [None] * 7, "right": [None] * 7}})
+    with pytest.raises(ProtocolError):
+        validate_control_context({"control_context": {"left": {}, "right": {}}})
