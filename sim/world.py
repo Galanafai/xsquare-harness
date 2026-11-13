@@ -29,11 +29,18 @@ import numpy as np
 from xharness.parts import GRIPPER, PARTS
 from xharness.protocol import ARMS, ACTION_ROWS
 
+# Start poses are the example state from the API Tutorial (real numbers, in the
+# robot base frame, so Wall-X sees a plausible pose). Everything else in this
+# file (table at z = 0, part and holder positions, the camera) is FAKE and only
+# chosen to keep parts within the 649 mm reach of those poses.
 HOME = {
-    "left_ee": np.array([0.30, 0.18, 0.22]),
-    "right_ee": np.array([0.30, -0.18, 0.22]),
+    "left_ee": np.array([0.2905, 0.0224, 0.3754]),
+    "right_ee": np.array([0.2825, -0.0510, 0.3906]),
 }
-DOWN_RPY = np.array([0.0, np.pi / 2, 0.0])  # gripper pointing down (fake convention)
+HOME_RPY = {
+    "left_ee": np.array([0.2968, -0.3565, -0.1049]),
+    "right_ee": np.array([0.0270, -0.5094, -0.3716]),
+}
 
 
 @dataclass
@@ -71,7 +78,7 @@ class Slot:
 @dataclass
 class Arm:
     pos: np.ndarray
-    rpy: np.ndarray = field(default_factory=lambda: DOWN_RPY.copy())
+    rpy: np.ndarray = field(default_factory=lambda: np.zeros(3))
     gripper: float = GRIPPER.max_command  # measured reading
     holding: str | None = None
 
@@ -80,7 +87,7 @@ class World:
     def __init__(self, case: int, seed: int = 0, tolerance_scale: float = 1.0):
         self.case = case
         self.rng = np.random.default_rng(seed)
-        self.arms = {arm: Arm(pos=HOME[arm].copy()) for arm in ARMS}
+        self.arms = {arm: Arm(pos=HOME[arm].copy(), rpy=HOME_RPY[arm].copy()) for arm in ARMS}
         self.parts: dict[str, SimPart] = {}
         self.slots: dict[str, Slot] = {}
         self.events: list[str] = []
@@ -104,7 +111,7 @@ class World:
         return part
 
     def _build(self, case: int, tol: float) -> None:
-        holder = np.array([0.40, 0.0])
+        holder = np.array([0.40, 0.0])  # FAKE position
         handle = self._add_part("handle", holder, z=0.0, fixed=True)
         jitter = self.rng.uniform(-0.02, 0.02, size=2)  # position generalization
         top = handle.top_z
@@ -118,15 +125,15 @@ class World:
                                     requires="shell_seat")
 
         if case == 1:
-            self._add_part("slider", np.array([0.33, 0.14]) + jitter)
+            self._add_part("slider", np.array([0.33, 0.09]) + jitter)
         elif case == 2:
             self._seat("slider", "handle_slot")
-            self._add_part("shell", np.array([0.33, 0.14]) + jitter)
+            self._add_part("shell", np.array([0.33, 0.09]) + jitter)
         elif case == 3:
             self._seat("slider", "handle_slot")
             self._seat("shell", "shell_seat")
-            self._add_part("button_a", np.array([0.32, 0.12]) + jitter)
-            self._add_part("button_b", np.array([0.32, 0.18]) + jitter)
+            self._add_part("button_a", np.array([0.32, 0.07]) + jitter)
+            self._add_part("button_b", np.array([0.32, 0.12]) + jitter)
         else:
             raise ValueError("case must be 1, 2 or 3")
 
