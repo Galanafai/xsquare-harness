@@ -33,7 +33,7 @@ Claude Code.
   [GRIPPER_FIRST_PROPOSAL](docs/GRIPPER_FIRST_PROPOSAL.md).
 - **If we pick Demo 2:** [D2_PLAN](docs/D2_PLAN.md) explains why the final press is hard,
   why it is still doable, and one possible approach (Wall-X carries, a small harness
-  "finisher" aligns and presses). Not built yet; depends on organizer question 13.
+  "finisher" aligns and presses). Built, off by default; organizers approved harness-generated motion (Nov 12).
 
 ### Findings from Nov 12 night (details in [WALLX_EXPERIMENTS](docs/WALLX_EXPERIMENTS.md))
 
@@ -56,7 +56,7 @@ Claude Code.
   Wall-X there. In sim it seats the part in 16 of 16 trials from 5 to 15 mm off and all three
   cases finish with Wall-X leaving a 5 to 15 mm error (without it they jam). It aborts to HOLD
   on doubt, every chunk passes the action filter, and a failed check loops back a bounded number
-  of times. **It generates arm motion, so it depends on the organizer answer to question 13.**
+  of times. **It generates arm motion; the organizers approved that on Nov 12** ([answers](docs/ORGANIZER_QUESTIONS.md)).
   All its numbers are placeholders, and the sim draws holes on top of parts (a real part may hide
   its hole), so none of this is proven on hardware.
 

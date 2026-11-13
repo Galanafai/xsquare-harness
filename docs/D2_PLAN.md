@@ -1,7 +1,8 @@
 # Demo 2 (SnapFit Carrot): why it's hard, why it's doable, one possible answer
 
-Status, Nov 12: analysis and a proposal for the team to discuss, not a decision.
-Nothing in this doc is built yet. The demo choice is still a team call; this
+Status, Nov 13: the organizers approved harness-generated motion for the final
+insertion (Nov 12 reply), so the first track below is the live one. The finisher
+is built and tested in sim, off by default until the on-site measurements are in. The demo choice is still a team call; this
 doc only covers "if we pick D2, how do we finish it?"
 
 ## Short version
@@ -11,9 +12,8 @@ doc only covers "if we pick D2, how do we finish it?"
 - So don't ask it for the last half millimeter. Let Wall-X bring the part
   close, then let the harness do the final alignment and press itself,
   using the wrist camera.
-- That plan depends on one organizer answer: **may the harness send its own
-  arm motion, instead of only forwarding Wall-X's?** Without it, D2 is mostly
-  partial credit.
+- That plan depended on one organizer answer: **may the harness send its own
+  arm motion, instead of only forwarding Wall-X's?** Answer (Nov 12): **yes.**
 
 ## What we discovered
 
@@ -113,15 +113,16 @@ stays available.
 | Press | Finisher, stepped, depth-capped | Wall-X, then release and check |
 | Realistic outcome | Real shot at full D2 cases | Mostly partial credit |
 
-Ask at the Friday 4 PM fireside chat, and again at check-in Saturday. This is
-[ORGANIZER_QUESTIONS](ORGANIZER_QUESTIONS.md) question 13.
+Answered yes on Nov 12 ([ORGANIZER_QUESTIONS](ORGANIZER_QUESTIONS.md) question 13). The right-hand
+column stays as the fallback if the finisher fails on hardware.
 
 ## Possible schedule
 
-- **Friday:** build the finisher in the fake world, flag off. The fake wrist
-  camera already renders the colored parts, so the loop can be tested.
-- **Saturday, first hour:** hold-still test, then a 3 mm harness-move test (does
-  the robot execute our own motion?), then measure the gripper and press height.
+- **Done (Nov 12 to 13):** finisher built and tested in the fake world, flag off.
+- **Saturday, first hour:** get the local Wall-X URL, hold-still test, a 3 mm
+  harness-move test (does the robot execute our own motion?), measured vs commanded
+  test (question 15), then measure seated_z, first-contact height, the gripper,
+  and take wrist photos of a held button (RUNBOOK).
 - **After that:** practice runs on the A board, tuning only from recordings.
 
 ## Risks, honestly
@@ -130,19 +131,18 @@ Ask at the Friday 4 PM fireside chat, and again at check-in Saturday. This is
   has any lead-in taper, the finisher can probably make it. If it's a straight
   interference fit, it may jam anyway. Hand-pressing a printed part tells us
   which, as soon as someone has one.
-- **The organizers may say no** to harness-generated motion. Then D2 is a
-  partial-credit play, and other demos should be compared on that basis.
+- **The held part may hide the hole** from the wrist camera. If it does, the
+  servo has to line up on the toy's edges instead. Saturday wrist photos decide.
 - **Unknown press force** for our prints. The depth limit must be set from a
   measurement, not a guess.
 - **Measured vs commanded pose:** contact detection assumes the robot reports
   where the arm actually is. Unverified (question 15).
-- **Integration time:** this is the biggest piece of new code on the list. If
-  it isn't working in sim by Friday night, it shouldn't go on the robot.
+- **Integration time:** it works in sim, but every number in it is a
+  placeholder until Saturday's measurements.
 
 ## Open questions for the team
 
-1. Do we want D2 enough to build the finisher Friday, before the organizers
-   answer?
-2. If they say no, do we still run D2 for partial credit, or switch?
+1. Is D2 our demo, now that the finisher is allowed? (Still a team call.)
+2. If the finisher fails on hardware, do we run D2 for partial credit or switch?
 3. Who brings the printed parts, and can someone hand-press a button before
-   Saturday?
+   Saturday? Organizers also want photos of the prints and any holder.

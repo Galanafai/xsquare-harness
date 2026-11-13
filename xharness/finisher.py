@@ -29,7 +29,8 @@ Safety rules:
   then keeps the arms still; the supervisor decides about retries.
 * All numbers in FinisherConfig are PLACEHOLDERS to measure on site.
 * OFF by default (finisher.enabled). It is harness-generated arm motion, which
-  organizers have not approved yet (docs/ORGANIZER_QUESTIONS.md #13).
+  the organizers approved on Nov 12 (docs/ORGANIZER_QUESTIONS.md #13). Off until
+  seated_z and the other placeholders are measured on site.
 
 The wrist camera is assumed to look along the gripper axis, so a part held in
 the fingers sits at a fixed place in the image and the hole moves as the arm

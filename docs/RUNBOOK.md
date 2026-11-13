@@ -16,6 +16,11 @@ starts, nobody touches a keyboard, controller or phone.**
 
 - [ ] WebUI at `http://<robot IP>/`, "Local Environment", three camera feeds live
 - [ ] Find the physical e-stop and the WebUI stop control
+- [ ] Ask at check-in: the **local on-site Wall-X URL** and auth (set `wallx.url`), wired LAN
+      or Wi-Fi isolation, and from the FAE: what trips a protective stop, max safe press force
+- [ ] **Measured or commanded?** Close the gripper on a part: does `state.gripper` stop at the
+      part's width (measured) or reach the command (commanded)? Same for z: a slow 1 mm
+      finisher press onto a rigid block. Finisher jam detection needs measured values.
 - [ ] `scp config/webui/local_d2_snapfit.json xr@<robot IP>:/home/xr/diversity/`
 - [ ] Edit Model Configuration: Wall-X address directly, EndPose, sync,
       embodiment `quanta_x1_pro/gripper-g` (lowercase)

@@ -60,7 +60,7 @@ recorder:
   save_frames: true
   frame_every: 1
 
-finisher:                       # harness-generated final alignment and press. OFF: needs organizer approval (#13)
+finisher:                       # harness-generated final alignment and press. approved by organizers (#13); OFF until seated_z is measured
   enabled: false
   # The press target is ABSOLUTE: each finisher stage in config/tasks/*.yaml needs seated_z (gripper z, metres,
   # with the part hand-placed fully seated; MEASURE ON SITE). Without it the finisher never presses.

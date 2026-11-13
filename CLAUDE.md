@@ -26,7 +26,10 @@ untested). The harness is demo-agnostic: a demo is a set of task YAMLs.
 - Organizers provide no props. We bring all printed parts and the holder.
 - Organizer confirmations so far: we may use the cloud Wall-X endpoint before the
   event, commercial models, and fine-tuned open-source models. X2Real is their
-  "simulation guide".
+  "simulation guide". Nov 12 reply: the harness MAY send its own arm motion for the
+  final insertion (finisher allowed); judges end runs by stopping the process; a local
+  Wall-X API will run on site (get the URL at check-in); current/torque/depth only by
+  modifying their client ourselves, which we do not do. Details: docs/ORGANIZER_QUESTIONS.md.
 
 ## The platform (tags: [doc] = organizer docs, [code] = seen in source, [unverified])
 
@@ -40,7 +43,7 @@ untested). The harness is demo-agnostic: a demo is a set of task YAMLs.
   interpolation and execution. We must NOT replace it or start another control
   process. [doc]
 - Rules claim joint current/torque and RGB-D depth APIs exist, but the harness
-  protocol carries neither. How to read them is an open organizer question.
+  protocol carries neither. Organizers: only by modifying the client ourselves, no guidance. We do not.
 - WebUI at `http://<robot IP>/`. Task JSONs go in `/home/xr/diversity/local_<id>.json`
   via scp. WebUI model overrides in `/home/xr/diversity/local/state/model_overrides.json`
   BEAT the task JSON; "Restore Default" can wipe API keys. [doc]
@@ -88,8 +91,9 @@ untested). The harness is demo-agnostic: a demo is a set of task YAMLs.
 - Gripper G range `[0, 1.526]`. The unit is very likely drive-joint radians, not
   mm (X2Real gripper_convention.py). [code][unverified on hardware]
 - Sync client config: action_horizon 32, control_dt 0.005, interpolate_multiplier 8
-  (suggests 40 ms per row on hardware vs 33.7 ms model rows). How many rows the
-  client executes per request is unknown. [doc][unverified]
+  (suggests 40 ms per row on hardware vs 33.7 ms model rows). Organizers (Nov 12): in
+  sync mode a new request starts only after the arm finishes the current action, so the
+  state we receive is after the chunk executed. [doc]
 - The API Tutorial PDF contains the competition key. Never copy it anywhere.
 
 ## Architecture
@@ -124,8 +128,8 @@ robot client -> `xharness/relay.py` -> Wall-X; replies -> `action_filter.py` -> 
   Every chunk passes `action_filter.py` (forced to enforce); any doubt (low confidence, error
   grew twice, arm did not move, bad Jacobian) aborts to HOLD. Stages: YAML `type: finisher`
   with `only: finisher`; Wall-X-only push/release stages are `only: wallx`. A failed finisher
-  or seated check loops back (`on_fail_goto`, `max_loops`). It is harness-generated arm motion:
-  depends on the organizer answer to docs/ORGANIZER_QUESTIONS.md #13. All its numbers are
+  or seated check loops back (`on_fail_goto`, `max_loops`). It is harness-generated arm motion,
+  approved by the organizers (Nov 12 reply, docs/ORGANIZER_QUESTIONS.md #13); still off until seated_z and the other placeholders are measured. All its numbers are
   placeholders (MEASURE ON SITE, including each stage's `seated_z`). The sim draws holes on top of
   parts, a simplification: **a real held part may hide its hole** (Saturday hour 1 takes wrist
   photos of a held button at 0, 2 and 5 mm offsets to check). The sim also models snap
