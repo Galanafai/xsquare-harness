@@ -256,3 +256,11 @@ def test_control_context_shape_matches_live_server():
         validate_control_context({"control_context": {"left": [None] * 7, "right": [None] * 7}})
     with pytest.raises(ProtocolError):
         validate_control_context({"control_context": {"left": {}, "right": {}}})
+
+
+def test_example_yaml_and_code_defaults_agree_on_timeouts():
+    from xharness.config import load_config
+
+    code, yaml_cfg = load_config(None).wallx, load_config("config/harness.example.yaml").wallx
+    assert code.first_request_timeout_s == yaml_cfg.first_request_timeout_s == 20.0
+    assert code.request_timeout_s == yaml_cfg.request_timeout_s == 8.0

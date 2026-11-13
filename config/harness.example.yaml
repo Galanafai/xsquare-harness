@@ -6,8 +6,10 @@
 wallx:
   endpoint: wss://maas-api.x2robot.com/v1/vla/wallx   # or the on-site ws://host:port
   open_timeout_s: 15
-  first_request_timeout_s: 20    # measured warm-up 4.0 s (probe 2026-11-12, n=1)
-  request_timeout_s: 5     # measured steady median 0.61 s, max 0.67 s (n=5)
+  # Measured warm-up 4.0 s (probe 2026-11-12, n=1).
+  first_request_timeout_s: 20
+  # Measured steady median 0.61 s, max 0.67 s (n=5). Venue network will be worse.
+  request_timeout_s: 8
   reconnect_attempts: 1          # per failed request; actions are never replayed
 
 listen:

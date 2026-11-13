@@ -59,7 +59,7 @@ Demo 2 proves infeasible on site: Demo 5 MedSort (K = 2.3).
   `control_context`. No RTC fields in sync mode. [doc]
 - Measured latency (2026-11-12, home network, n=5 steady): first call 4.0 s (warm-up),
   steady median 0.61 s, max 0.67 s. Server-side inference is about 85 ms; the rest is
-  network. Relay timeouts: 20 s first call, 5 s steady. A request with a changed
+  network. Relay timeouts: 20 s first call, 8 s steady. A request with a changed
   `control_context` took 3.2 s once. [measured]
 - Real replies use plain msgpack lists (not msgpack-numpy arrays) and carry extra
   fields: `normalization`, `server_timing`, `usage`, `valid_rows`, `rtc`, `grip_check`,
