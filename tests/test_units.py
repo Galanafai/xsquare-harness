@@ -300,3 +300,25 @@ def test_filter_passes_gimbal_artifact_and_blocks_real_flip():
     flip[16:, 0] = 1.0  # a real 1 rad roll jump between two rows
     result = run(flip)
     assert not result.ok and any("rotation step" in v for v in result.violations)
+
+
+def test_verifier_sends_user_agent_and_reports_http_error_body(monkeypatch):
+    """Groq's Cloudflare front returned 403 to Python's default user agent."""
+    import io
+    import urllib.error
+    import urllib.request
+
+    from xharness.config import VerifierConfig
+    from xharness.verifier import USER_AGENT, Verifier
+
+    seen = {}
+
+    def fake_urlopen(req, timeout=None):
+        seen["ua"] = req.get_header("User-agent")
+        raise urllib.error.HTTPError(req.full_url, 403, "Forbidden", {}, io.BytesIO(b"error code: 1010"))
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    cfg = VerifierConfig(chat_url="https://example.invalid/v1/chat/completions", model="m", cameras=[])
+    verdict = asyncio.run(Verifier(cfg).check("t.s", "q?", {"observation": {"images": {}}}))
+    assert seen["ua"] == USER_AGENT
+    assert verdict.answer == "unsure" and "1010" in verdict.error

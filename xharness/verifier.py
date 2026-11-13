@@ -34,6 +34,7 @@ from PIL import Image
 from .config import VerifierConfig
 
 ANSWERS = ("yes", "no", "unsure")
+USER_AGENT = "xsquare-harness/0.1 (+https://github.com/Galanafai/xsquare-harness)"
 
 SYSTEM_PROMPT = """You check the state of a robot tabletop task from camera images.
 Cameras: "front" is a fixed camera facing the robot. It is MIRRORED: the robot's
@@ -131,7 +132,10 @@ class Verifier:
         except asyncio.TimeoutError:
             return Verdict("unsure", "timeout", _ms(started), error="timeout")
         except urllib.error.HTTPError as err:
-            return Verdict("unsure", f"HTTP {err.code}", _ms(started), error=f"http_{err.code}")
+            # Keep a short slice of the error body: it says WHY (bad model id,
+            # rate limit, blocked client). It never contains our API key.
+            detail = _error_body(err)
+            return Verdict("unsure", f"HTTP {err.code}", _ms(started), error=f"http_{err.code}: {detail}")
         except Exception as err:  # noqa: BLE001 - verifier must never raise
             return Verdict("unsure", type(err).__name__, _ms(started), error=type(err).__name__)
 
@@ -157,7 +161,9 @@ class Verifier:
         }
 
     def _post(self, body: dict) -> str:
-        headers = {"Content-Type": "application/json"}
+        # Some providers sit behind Cloudflare, which rejects Python's default
+        # "Python-urllib/3.x" user agent with HTTP 403 (seen on Groq). Name ourselves.
+        headers = {"Content-Type": "application/json", "User-Agent": USER_AGENT}
         if self.api_key:
             headers["Authorization"] = "Bearer " + self.api_key
         req = urllib.request.Request(self.cfg.chat_url, json.dumps(body).encode(), headers=headers)
@@ -165,6 +171,13 @@ class Verifier:
         with urllib.request.urlopen(req, timeout=self.cfg.timeout_s + 2) as resp:
             result = json.load(resp)
         return result["choices"][0]["message"]["content"] or ""
+
+
+def _error_body(err: urllib.error.HTTPError, limit: int = 200) -> str:
+    try:
+        return err.read().decode("utf-8", "replace")[:limit]
+    except Exception:  # noqa: BLE001
+        return ""
 
 
 def _ms(started: float) -> float:
