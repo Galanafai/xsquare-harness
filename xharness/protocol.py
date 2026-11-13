@@ -283,3 +283,38 @@ def hold_actions(state: dict[str, ArmState]) -> dict[str, dict[str, np.ndarray]]
         }
         for arm in ARMS
     }
+
+
+# Poses from the API Tutorial example request (base frame). Only used for the
+# synthetic pre-warm request; no robot ever sees a reply to it.
+_PREWARM_STATE = {
+    "left_ee": {"position": [0.2905, 0.0224, 0.3754], "rotation_rpy": [0.2968, -0.3565, -0.1049], "gripper": 1.0},
+    "right_ee": {"position": [0.2825, -0.0510, 0.3906], "rotation_rpy": [0.0270, -0.5094, -0.3716], "gripper": 1.0},
+}
+
+
+def build_prewarm_request(embodiment: str = "quanta_x1_pro/gripper-g", size: tuple[int, int] = (640, 480)) -> dict:
+    """A valid, boring public_v2 request used only to wake Wall-X before a run.
+
+    Gray frames, tutorial poses, a neutral instruction, and NO control_context
+    (a changed control_context took 3.2 s once, so we never touch it). The reply
+    is discarded by the caller: it must never be sent to the robot.
+    """
+    import base64
+    import io
+
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", size, (128, 128, 128)).save(buf, format="JPEG", quality=80)
+    frame = base64.b64encode(buf.getvalue()).decode("ascii")
+    return {
+        "embodiment": embodiment,
+        "normalization": "provided",
+        "instruction": "Stay still.",
+        "observation": {
+            "images": {cam: frame for cam in CAMERAS},
+            "state": {arm: {k: list(v) if isinstance(v, list) else v for k, v in s.items()}
+                      for arm, s in _PREWARM_STATE.items()},
+        },
+    }

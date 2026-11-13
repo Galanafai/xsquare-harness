@@ -52,3 +52,44 @@ def test_messy_vision_model_is_tolerated():
     r = run(case=2, vlm_faults=VLM_FAULTS["messy"], seed=1)
     assert r["task_status"] == "done"
     assert no_false_positives(r)
+
+
+def test_prewarm_sends_one_synthetic_request_and_never_reaches_the_robot():
+    from sim.fake_wallx import FakeWallX
+    from sim.world import World
+    from xharness.config import load_config
+    from xharness.relay import Relay
+    from xharness.supervisor import Supervisor
+    from xharness.verifier import Verifier
+
+    async def go():
+        wallx = FakeWallX(World(case=1))
+        server = await wallx.serve()
+        cfg = load_config(None)
+        cfg.wallx.endpoint = f"ws://127.0.0.1:{server.sockets[0].getsockname()[1]}"
+        cfg.wallx.headers_file = ""
+        cfg.recorder.dir = __import__("tempfile").mkdtemp()
+        relay = Relay(cfg, Supervisor([], cfg.supervisor, Verifier(cfg.verifier)), verbose=False)
+        result = await relay.prewarm()
+        server.close()
+        await server.wait_closed()
+        return wallx, result
+
+    wallx, result = asyncio.run(go())
+    assert result["ok"] and result["latency_ms"] >= 0
+    assert wallx.requests == 1 and wallx.instructions == ["Stay still."]
+
+
+def test_prewarm_failure_is_swallowed():
+    from xharness.config import load_config
+    from xharness.relay import Relay
+    from xharness.supervisor import Supervisor
+    from xharness.verifier import Verifier
+
+    cfg = load_config(None)
+    cfg.wallx.endpoint = "ws://127.0.0.1:1"  # nothing listens here
+    cfg.wallx.open_timeout_s = 1
+    cfg.recorder.dir = __import__("tempfile").mkdtemp()
+    relay = Relay(cfg, Supervisor([], cfg.supervisor, Verifier(cfg.verifier)), verbose=False)
+    result = asyncio.run(relay.prewarm())
+    assert result["ok"] is False and "error" in result

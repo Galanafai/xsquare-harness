@@ -43,6 +43,7 @@ from .protocol import (
     error_code,
     hold_actions,
     is_error_response,
+    build_prewarm_request,
     pack,
     read_state,
     unpack,
@@ -138,11 +139,13 @@ class WallXUpstream:
 
 
 class Relay:
-    def __init__(self, cfg: HarnessConfig, supervisor: Supervisor, verbose: bool = True):
+    def __init__(self, cfg: HarnessConfig, supervisor: Supervisor, verbose: bool = True, prewarm: bool = True):
         self.cfg = cfg
         self.supervisor = supervisor
         self.filter = ActionFilter(cfg.filter)
         self.verbose = verbose
+        self.prewarm_enabled = prewarm
+        self.prewarm_result: dict | None = None
         self.sessions = 0
 
     async def serve_forever(self) -> None:
@@ -155,7 +158,44 @@ class Relay:
             max_size=MAX_FRAME_BYTES,
         ):
             self._say(f"listening on ws://{self.cfg.listen.host}:{self.cfg.listen.port}")
-            await asyncio.Future()
+            warm = asyncio.create_task(self.prewarm()) if self.prewarm_enabled else None
+            try:
+                await asyncio.Future()
+            finally:
+                if warm is not None:
+                    warm.cancel()
+
+    async def prewarm(self) -> dict:
+        """Send one synthetic request to Wall-X so a cold start never lands on a real one.
+
+        Measured: the first call after idle took 4.0 s, later calls 0.6 s, and
+        the warm-up belongs to the server, not the connection. It runs on its
+        OWN connection and its reply is dropped here: nothing from it can reach
+        the robot. Any failure is logged and ignored.
+        """
+        upstream = WallXUpstream(self.cfg)
+        recorder = SessionRecorder(self.cfg.recorder, label="prewarm")
+        started = time.monotonic()
+        result: dict = {"ok": False}
+        try:
+            raw = await upstream.infer(pack(build_prewarm_request()))
+            reply = unpack(raw)
+            result = {"ok": not is_error_response(reply), "infer_ms": (reply.get("server_timing") or {}).get("infer_ms")}
+            if not result["ok"]:
+                result["error"] = str(reply.get("error"))[:200]
+        except (UpstreamError, ProtocolError) as err:
+            result["error"] = str(err)[:200]
+        except Exception as err:  # noqa: BLE001 - pre-warm must never take the relay down
+            result["error"] = f"{type(err).__name__}: {err}"[:200]
+        finally:
+            await upstream.close()
+        result["latency_ms"] = round((time.monotonic() - started) * 1000, 1)
+        recorder.event("prewarm", **result)
+        recorder.close()
+        self.prewarm_result = result
+        status = "ok" if result["ok"] else f"FAILED ({result.get('error')})"
+        self._say(f"pre-warm {status}: {result['latency_ms']:.0f} ms (reply discarded)")
+        return result
 
     # ------------------------------------------------------------------
 

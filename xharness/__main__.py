@@ -3,6 +3,7 @@
     python -m xharness --config config/harness.example.yaml --host 192.168.1.20
     python -m xharness --check             # validate config + tasks, print warnings, exit
     python -m xharness --reset-state       # forget task progress (between practice runs)
+    python -m xharness --no-prewarm        # skip the startup warm-up request to Wall-X
     python -m xharness --hold-only         # reply HOLD to everything (safe on-site HOLD test)
 """
 
@@ -30,6 +31,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--hold-only", action="store_true",
                         help="answer every request with HOLD (never calls Wall-X). Use once on site to "
                              "confirm the robot accepts our HOLD chunks and stays still.")
+    parser.add_argument("--no-prewarm", action="store_true",
+                        help="skip the synthetic warm-up request sent to Wall-X at startup (never sent with --hold-only)")
     parser.add_argument("--reset-state", action="store_true", help="forget saved task progress before starting")
     parser.add_argument("--check", action="store_true", help="validate config and tasks, print warnings, then exit")
     args = parser.parse_args(argv)
@@ -64,7 +67,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     try:
-        asyncio.run(Relay(cfg, supervisor).serve_forever())
+        asyncio.run(Relay(cfg, supervisor, prewarm=not (args.no_prewarm or args.hold_only)).serve_forever())
     except KeyboardInterrupt:
         print("\nharness stopped. Confirm the robot session is stopped in the WebUI.")
     return 0

@@ -88,7 +88,8 @@ Demo 2 proves infeasible on site: Demo 5 MedSort (K = 2.3).
 robot client -> `xharness/relay.py` -> Wall-X; replies -> `action_filter.py` -> robot.
 
 - `protocol.py`: wire contract, validation, HOLD chunk builder.
-- `relay.py`: WebSocket server. NEVER closes the robot connection because of our
+- `relay.py`: WebSocket server. At startup it sends ONE synthetic request on its own connection to
+  warm Wall-X and discards the reply (`--no-prewarm` to skip). NEVER closes the robot connection because of our
   own or Wall-X errors (the organizers' example did; the client reconnects and the
   task restarts mid-motion). Wall-X down or slow -> HOLD. After any Wall-X timeout
   the connection is discarded (a late reply would pair with the next request).
@@ -149,10 +150,11 @@ robot client -> `xharness/relay.py` -> Wall-X; replies -> `action_filter.py` -> 
 
 ## Commands
 
-    python -m pytest -q                     # 28 tests, about 6 s, no network
+    python -m pytest -q                     # 40 tests, about 10 s, no network
     python -m xharness --check              # config + tasks + warnings
     python -m xharness --host <LAN IP>      # run the harness (never 127.0.0.1 on site)
-    python -m xharness --hold-only          # every reply is HOLD
+    python -m xharness --hold-only          # every reply is HOLD (never calls Wall-X)
+    python -m xharness --no-prewarm         # skip the startup warm-up request to Wall-X
     python -m xharness --reset-state        # forget progress between practice runs
     python -m sim.run --case 1|2|3 [--faults standard] [--vlm-faults messy|hostile] [--drop-connection N] [--real-wallx]
     python tools/probe_wallx.py             # needs WALLX_API_KEY or WALLX_HEADERS_FILE
