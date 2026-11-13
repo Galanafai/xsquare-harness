@@ -114,6 +114,42 @@ class RecorderConfig:
 
 
 @dataclass
+class FinisherConfig:
+    """Training-free final alignment and press controller (xharness/finisher.py).
+
+    OFF by default. It generates arm motion itself instead of Wall-X, which
+    organizers have not yet approved (docs/ORGANIZER_QUESTIONS.md #13).
+    Every number below is a PLACEHOLDER until measured on the real robot.
+    """
+
+    enabled: bool = False
+    # --- look-then-move servo (wrist camera, z and rotation frozen)
+    explore_mm: float = 3.0  # exploratory move per axis to estimate the 2x2 image Jacobian
+    gain: float = 0.6  # 0.5 to 0.7
+    max_step_mm: float = 3.0  # per axis, per correction
+    max_corrections: int = 8
+    converge_mm: float = 0.3  # converged = 2 consecutive frames under this
+    broyden: bool = True  # refine the Jacobian after every move
+    min_confidence: float = 0.5  # below this the finisher aborts to HOLD
+    scale_tolerance: float = 2.5  # Jacobian px/mm must be within this factor of part width px / mm
+    target_offset_px: list = field(default_factory=lambda: [0.0, 0.0])  # MEASURE: where the aligned hole appears
+    # --- image detection
+    dark_value_max: float = 0.22  # HSV value below which a pixel can be hole shadow (0 to 1)
+    # --- stepped press
+    press_step_mm: float = 1.0
+    max_press_depth_mm: float = 40.0  # hard floor below the z where pressing starts. PLACEHOLDER, MEASURE ON SITE
+    contact_margin_mm: float = 0.5  # measured z this far above commanded = pushing on something. PLACEHOLDER
+    contact_requests: int = 2
+    # --- release and lift
+    grip_command: float = 0.0  # gripper command that keeps the part gripped (used if Wall-X never set one). PLACEHOLDER
+    open_command: float = 1.526  # command that opens the gripper
+    open_above: float = 1.0  # measured reading that counts as open. PLACEHOLDER
+    lift_mm: float = 30.0
+    lift_step_mm: float = 6.0
+    ramp_rows: int = 8  # rows over which a chunk reaches its target; the rest hold it
+
+
+@dataclass
 class HarnessConfig:
     wallx: WallXConfig = field(default_factory=WallXConfig)
     listen: ListenConfig = field(default_factory=ListenConfig)
@@ -122,6 +158,7 @@ class HarnessConfig:
     supervisor: SupervisorConfig = field(default_factory=SupervisorConfig)
     hold: HoldConfig = field(default_factory=HoldConfig)
     recorder: RecorderConfig = field(default_factory=RecorderConfig)
+    finisher: FinisherConfig = field(default_factory=FinisherConfig)
     task_files: list[str] = field(default_factory=list)
 
 

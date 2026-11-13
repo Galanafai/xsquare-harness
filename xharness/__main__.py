@@ -45,7 +45,7 @@ def main(argv: list[str] | None = None) -> int:
     task_files = [] if (args.passthrough or args.hold_only) else [*cfg.task_files, *args.task]
     if args.hold_only:
         cfg.supervisor.unknown_goal = "hold"
-    tasks = load_tasks(task_files)
+    tasks = load_tasks(task_files, cfg.finisher.enabled)
     verifier = Verifier(cfg.verifier)
     supervisor = Supervisor(tasks, cfg.supervisor, verifier)
     if args.reset_state:
