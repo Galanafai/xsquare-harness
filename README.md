@@ -31,6 +31,9 @@ Claude Code.
 - **Docs:** [DIFFICULTIES](docs/DIFFICULTIES.md), [RUNBOOK](docs/RUNBOOK.md),
   [ORGANIZER_QUESTIONS](docs/ORGANIZER_QUESTIONS.md),
   [GRIPPER_FIRST_PROPOSAL](docs/GRIPPER_FIRST_PROPOSAL.md).
+- **If we pick Demo 2:** [D2_PLAN](docs/D2_PLAN.md) explains why the final press is hard,
+  why it is still doable, and one possible approach (Wall-X carries, a small harness
+  "finisher" aligns and presses). Not built yet; depends on organizer question 13.
 
 ### Findings from Nov 12 night (details in [WALLX_EXPERIMENTS](docs/WALLX_EXPERIMENTS.md))
 
@@ -53,7 +56,7 @@ Claude Code.
 | Proven (measured or tested) | Still a guess (needs the robot or organizers) |
 |---|---|
 | Wall-X auth, latency, reply format | Can Wall-X grasp a 10.7 mm button or seat the slider? |
-| Instruction text steers Wall-X (up to 139 mm difference) | Does the robot client accept our hold-still replies? |
+| Wall-X output is random call to call (65 mm mean); wording changes it no more than that | Does the robot client accept our hold-still replies? |
 | Harness survives Wall-X crashes, timeouts, bad output, reconnects (sim) | Are we allowed to replace Wall-X's output at all? |
 | No false "done" in 60 sim runs with a vision model lying 10% of the time | Real vision accuracy on real camera frames |
 | Qwen on Groq answers correctly in about 1.2 s | Gripper mm opening; is the gripper reading measured or commanded? |
