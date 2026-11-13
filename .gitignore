@@ -1,0 +1,16 @@
+# Secrets: never commit keys or handshake headers
+*headers*.json
+.env
+*.key
+config/harness.local.yaml
+
+# Run artifacts (camera frames, logs, probe output)
+runs/
+probe_out/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+*.egg-info/

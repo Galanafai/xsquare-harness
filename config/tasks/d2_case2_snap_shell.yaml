@@ -1,0 +1,52 @@
+# Demo 2, A-board case 2: snap the outer shell onto the handle + slider.
+# Start: handle with slider fitted (in the holder), loose green shell.
+
+task_id: d2_case2_snap_shell
+goal: "Snap the green shell onto the toy."
+context: >
+  Tabletop toy assembly. The white handle with the orange slider already
+  fitted sits in a holder at the center. A loose green shell (70x33x23.5 mm)
+  lies on the table to one side.
+
+stages:
+  - id: grasp_shell
+    instructions:
+      - "Pick up the green shell."
+      - "Grasp the green part and lift it."
+    done:
+      question: "Is the green shell held between one gripper's fingers and lifted off the table?"
+      confirmations: 2
+    budget_requests: 12
+    max_retries: 2
+
+  - id: align_shell
+    instructions:
+      - "Move the green shell above the white handle."
+      - "Hold the green shell just above the toy in the holder, lined up with it."
+    done:
+      question: "Is the green shell directly above the toy in the holder, lined up lengthwise, within about 3 cm?"
+      confirmations: 2
+      require_still: true
+    budget_requests: 10
+    max_retries: 2
+
+  - id: press_shell
+    instructions:
+      - "Press the green shell down onto the white handle."
+      - "Push the green shell down until it snaps onto the toy."
+    done:
+      question: "Is the green shell sitting flat on the white handle with no gap, fully snapped on?"
+      confirmations: 2
+      require_still: true
+    budget_requests: 12
+    max_retries: 2
+
+  - id: release_retract
+    instructions:
+      - "Release the green shell and move the arm up and away."
+    done:
+      question: "Are both grippers open and clear of the toy, with the shell still on the handle?"
+      confirmations: 1
+    budget_requests: 6
+    max_retries: 1
+    optional: true

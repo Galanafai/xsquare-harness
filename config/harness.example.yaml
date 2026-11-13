@@ -1,0 +1,57 @@
+# xharness configuration. Copy to config/harness.local.yaml and edit.
+# Secrets are NEVER put here. Use environment variables:
+#   WALLX_HEADERS_FILE=~/.config/xharness/wallx-headers.json   (chmod 600)
+#   AGENT_CHAT_URL / AGENT_MODEL / AGENT_API_KEY               (vision model)
+
+wallx:
+  endpoint: wss://maas-api.x2robot.com/v1/vla/wallx   # or the on-site ws://host:port
+  open_timeout_s: 15
+  first_request_timeout_s: 60    # first call does CUDA graph warm-up
+  request_timeout_s: 20
+  reconnect_attempts: 1          # per failed request; actions are never replayed
+
+listen:
+  host: 0.0.0.0                  # robot connects to ws://<your LAN IP>:8001
+  port: 8001
+
+task_files:
+  - config/tasks/d2_case1_insert_slider.yaml
+  - config/tasks/d2_case2_snap_shell.yaml
+  - config/tasks/d2_case3_press_buttons.yaml
+
+verifier:
+  enabled: true
+  timeout_s: 8
+  image_max_side: 512
+  cameras: [front, left_wrist, right_wrist]
+
+supervisor:
+  verify_every: 2               # vision check every 2nd Wall-X request
+  still_threshold_m: 0.005
+  grasp_band: [0.08, 1.30]      # MEASURE: gripper reading while holding a part
+  open_above: 1.0               # MEASURE: reading when fully open
+  stall_margin: 0.05
+  state_file: runs/supervisor_state.json
+  unknown_goal: passthrough     # goal with no task file: forward unchanged
+
+hold:
+  on_done: true                 # task complete -> keep arms still (nobody may touch a keyboard)
+  on_upstream_failure: true     # Wall-X down/slow -> keep arms still, keep asking
+  on_task_failed: true
+
+filter:
+  mode: enforce                 # off | log | enforce. enforce = unsafe chunk -> HOLD (confirm with organizers)
+  max_row_step_m: 0.05
+  max_first_row_jump_m: 0.10
+  max_row_rot_step_rad: 0.35
+  freeze_idle_arm: false        # ask organizers before enabling
+  # PLACEHOLDER boxes (robot base frame, metres). Replace with measured limits:
+  # run a few direct Wall-X episodes, then: python tools/workspace_from_runs.py runs/
+  workspace:
+    left_ee:  {min: [-1.0, -1.0, -1.0], max: [1.0, 1.0, 1.0]}
+    right_ee: {min: [-1.0, -1.0, -1.0], max: [1.0, 1.0, 1.0]}
+
+recorder:
+  dir: runs
+  save_frames: true
+  frame_every: 1

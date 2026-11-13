@@ -1,0 +1,31 @@
+# Questions for the organizers (contact@x2robot.com)
+
+Already answered (Nov 11 email): cloud Wall-X may be used before the event;
+commercial models and fine-tuned open-source models are allowed; X2Real is
+the simulation guide. The rules doc answers scoring (sum x K) and that we
+may switch between confirmed demos on site.
+
+Still open, most important first:
+
+1. **May the harness replace or modify Wall-X action chunks?** We use this
+   for safety (replace NaN / huge jumps with a stay-still chunk), to hold
+   still after the task is done, and optionally to freeze the idle arm.
+2. **Once a run starts nobody may touch a keyboard. Who ends the run, and
+   how?** After the last step our harness keeps the arms still. Is that the
+   expected behavior, and do the judges press End in the WebUI?
+3. **The rules say the platform exposes joint current/torque and RGB-D
+   depth. How do we read them?** The harness protocol (public_v2) only has
+   EE pose, gripper and three JPEGs. Is there a read-only API or topic on
+   the robot we may use?
+4. **Is the passive holder for Demo 2 approved**, and may it be taped or
+   clamped to the table at a fixed position?
+5. **In sync mode, how many of the 32 rows does the client execute per
+   request, at what period, and is the arm still while it waits?**
+6. **Is `state.gripper` the measured follower position or the commanded
+   value?** What opening in mm do 0 and 1.526 correspond to?
+7. **Which header does Wall-X authentication use?** (Our probe will tell
+   us; this is a fallback.) Is there an on-site Wall-X endpoint if the
+   cloud is slow?
+8. Robot-to-laptop network: wired LAN? Any client isolation on Wi-Fi?
+9. Does the arm protective-stop on contact or overcurrent, and how is it
+   reset?

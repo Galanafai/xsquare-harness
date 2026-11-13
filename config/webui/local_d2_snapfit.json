@@ -1,0 +1,71 @@
+{
+  "mode": "benchmark",
+  "task_name": "d2_snapfit_carrot",
+  "model": {
+    "config_name": "d2_harness",
+    "deploy": "lan",
+    "model_address": "ws://REPLACE_WITH_LAPTOP_LAN_IP:8001",
+    "robot_type": "DESKTOP",
+    "mode_type": "EndPose",
+    "infer_type": "sync",
+    "infer_params": {
+      "action_horizon": 32,
+      "control_dt": 0.005,
+      "interpolate_multiplier": 8,
+      "async_params": {
+        "api_schema": "public_v2",
+        "embodiment": "quanta_x1_pro/gripper-g",
+        "normalization": "provided",
+        "control_context": "masked"
+      }
+    }
+  },
+  "data": [
+    {
+      "case_id": 1,
+      "instruction": "Insert the orange slider into the white handle.",
+      "image_path": "",
+      "env_description": {
+        "handle": "white, in the holder at the center",
+        "slider": "orange, loose on the table to one side"
+      },
+      "scores_dict": {
+        "Grasp the slider": 3,
+        "Slider aligned above the handle": 2,
+        "Slider seated in the handle": 5
+      },
+      "timeout": 480
+    },
+    {
+      "case_id": 2,
+      "instruction": "Snap the green shell onto the toy.",
+      "image_path": "",
+      "env_description": {
+        "toy": "white handle with orange slider fitted, in the holder at the center",
+        "shell": "green, loose on the table to one side"
+      },
+      "scores_dict": {
+        "Grasp the shell": 3,
+        "Shell aligned over the toy": 2,
+        "Shell snapped on": 5
+      },
+      "timeout": 480
+    },
+    {
+      "case_id": 3,
+      "instruction": "Press the two buttons into the toy.",
+      "image_path": "",
+      "env_description": {
+        "toy": "assembled with shell, in the holder at the center, two button holes on top",
+        "buttons": "teal and purple, standing upright on the table"
+      },
+      "scores_dict": {
+        "Grasp the first button": 2,
+        "First button pressed in": 3,
+        "Grasp the second button": 2,
+        "Second button pressed in": 3
+      },
+      "timeout": 480
+    }
+  ]
+}

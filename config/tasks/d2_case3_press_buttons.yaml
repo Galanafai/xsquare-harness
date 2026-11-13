@@ -1,0 +1,88 @@
+# Demo 2, A-board case 3: press both snap buttons into the toy.
+# This is the step that sets K = 4.5 (F4 Precision_Insert, +-0.5 mm snap depth,
+# axial press, hole hidden by the gripper). Expect it to be the hardest.
+#
+# Buttons are 10.7 x 10.7 x 12.1 mm: smaller than most fingertips. Present
+# them standing upright, apart from each other.
+
+task_id: d2_case3_press_buttons
+goal: "Press the two buttons into the toy."
+context: >
+  Tabletop toy assembly. The assembled toy (white handle, green shell) sits in
+  a holder at the center with two button holes on top. A small teal button
+  and a small purple button (10.7 mm wide) stand upright on the table.
+
+stages:
+  - id: grasp_teal
+    instructions:
+      - "Pick up the teal button."
+      - "Grasp the small teal button and lift it."
+    done:
+      question: "Is the small teal button held between one gripper's fingers and lifted off the table?"
+      confirmations: 2
+    budget_requests: 12
+    max_retries: 2
+
+  - id: align_teal
+    instructions:
+      - "Move the teal button above the hole on the toy."
+      - "Hold the teal button just above a button hole on the green shell."
+    done:
+      question: "Is the teal button directly above a button hole on the toy, within about 2 cm?"
+      confirmations: 2
+      require_still: true
+    budget_requests: 10
+    max_retries: 2
+
+  - id: press_teal
+    instructions:
+      - "Press the teal button down into the hole."
+      - "Push the teal button straight down into the toy."
+    done:
+      question: "Is the teal button seated flush in a hole on the toy (not lying on top or on the table)?"
+      confirmations: 2
+      require_still: true
+    budget_requests: 12
+    max_retries: 2
+
+  - id: grasp_purple
+    instructions:
+      - "Pick up the purple button."
+      - "Grasp the small purple button and lift it."
+    done:
+      question: "Is the small purple button held between one gripper's fingers and lifted off the table?"
+      confirmations: 2
+    budget_requests: 12
+    max_retries: 2
+
+  - id: align_purple
+    instructions:
+      - "Move the purple button above the empty hole on the toy."
+      - "Hold the purple button just above the empty button hole."
+    done:
+      question: "Is the purple button directly above the EMPTY button hole on the toy, within about 2 cm?"
+      confirmations: 2
+      require_still: true
+    budget_requests: 10
+    max_retries: 2
+
+  - id: press_purple
+    instructions:
+      - "Press the purple button down into the hole."
+      - "Push the purple button straight down into the toy."
+    done:
+      question: "Are BOTH buttons (teal and purple) now seated flush in the toy's holes?"
+      confirmations: 2
+      require_still: true
+    budget_requests: 12
+    max_retries: 2
+
+  - id: release_retract
+    instructions:
+      - "Release the button and move both arms up and away."
+    done:
+      question: "Are both grippers open and clear of the toy?"
+      confirmations: 1
+    budget_requests: 6
+    max_retries: 1
+    optional: true
