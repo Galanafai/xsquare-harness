@@ -3,6 +3,84 @@
 The agent harness for our BRIGHT 2026 Embodied Agent Hackathon entry
 (X Square desktop dual-arm robot, Wall-X VLA, Demo 2 "SnapFit Carrot").
 
+## Team status (Nov 12): read this first
+
+This is a **baseline so we're not starting from zero on Saturday, not the
+plan.** Everything here is open for the team to change. Built by Galanafai
+with Claude and Claude Code.
+
+### What's done
+
+- **Investigation:** organizer docs, the rules and X Square's repos. Key
+  findings: Wall-X only moves the arms (no memory, no "done" signal), so the
+  harness owns steps, checking and stopping. Score = (sum of 6 B-board
+  cases) x K. Nobody may touch a keyboard once a run starts. X2Real is an
+  Isaac Sim benchmark, not robot software.
+- **Harness:** relay, step supervisor, yes/no vision verifier, safety
+  filter with "hold still" replies, recorder, Wall-X pre-warm at startup.
+- **Testing without hardware:** fake robot, fake Wall-X and fake vision
+  model, using our real part sizes, with fault injection. 41 tests pass.
+- **Real Wall-X measured** (`tools/probe_wallx.py`): auth is
+  `Authorization: Bearer <key>`, about 0.6 s per call, 4 s first call after
+  idle, exact reply format (our hold-still replies copy it).
+- **Vision model wired in:** Qwen (`qwen/qwen3.8-27b`) on Groq answers
+  correctly in about 1.2 s. Accuracy eval tooling exists (`tools/eval_verifier.py`).
+- **Task files:** Demo 2 cases 1 to 3 and Demo 5 fallback drafts
+  (`config/tasks/`), plus matching WebUI JSONs (`config/webui/`).
+- **Docs:** [DIFFICULTIES](docs/DIFFICULTIES.md), [RUNBOOK](docs/RUNBOOK.md),
+  [ORGANIZER_QUESTIONS](docs/ORGANIZER_QUESTIONS.md),
+  [GRIPPER_FIRST_PROPOSAL](docs/GRIPPER_FIRST_PROPOSAL.md).
+
+### Proven vs still a guess
+
+| Proven (measured or tested) | Still a guess (needs the robot or organizers) |
+|---|---|
+| Wall-X auth, latency, reply format | Can Wall-X grasp a 10.7 mm button or seat the slider? |
+| Instruction text steers Wall-X (up to 139 mm difference) | Does the robot client accept our hold-still replies? |
+| Harness survives Wall-X crashes, timeouts, bad output, reconnects (sim) | Are we allowed to replace Wall-X's output at all? |
+| No false "done" in 60 sim runs with a vision model lying 10% of the time | Real vision accuracy on real camera frames |
+| Qwen on Groq answers correctly in about 1.2 s | Gripper mm opening; is the gripper reading measured or commanded? |
+| 41 tests pass | Snap force of our prints; holder approval; venue latency |
+
+### Architecture options (we can mix these)
+
+| Option | Idea | Trade-off |
+|---|---|---|
+| A. Organizers' example | Vision LLM picks the next instruction every few Wall-X calls | Simplest, but drops the connection on errors and has no reliable "done" |
+| **B. Fixed steps + yes/no checks (current baseline)** | We write the steps; the vision model only confirms each one | Predictable and testable, but rigid |
+| C. B + gripper-first checks | Gripper reading decides grasp/release; vision only for "aligned" and "seated" | About a third to half fewer vision calls; needs the gripper reading to be measured |
+| D. B's safety layer + free-form LLM planner | LLM chooses instructions from images; relay, filter, hold stay | More flexible for disturbance and look-alike cases; harder to test |
+| E. Fine-tune Wall-OSS on our own demos | Collect teleop data on site, train, serve ourselves | Could fix precision insertion; too slow and risky for a 2-day event |
+
+### Team decisions
+
+1. **Demo 2 or Demo 5?** Demo 2 scores up to 4.5x, but the press steps are the
+   riskiest for Wall-X. Demo 5 (K = 2.3) is mostly pick and place. What success
+   rate on Saturday morning makes us switch?
+2. **Planner style:** B, C, D, or a mix.
+3. **Vision budget:** Groq free tier allows only about one 3-camera check per
+   minute. Groq paid, self-hosted Qwen on RunPod, or fewer cameras per check?
+4. **Physics sim (X2Real):** skip, or timebox (for example 3 hours, RTX GPU needed)?
+5. **Who owns what:** prints and holder / vision model and real photos /
+   organizer comms and runbook.
+6. **Print colors:** task files assume white handle, orange slider, green shell,
+   teal and purple buttons. Update `config/tasks/` and `xharness/parts.py` to match.
+
+### Things to think about
+
+- The biggest unknowns are physical. Saturday's first two hours of
+  measurement (see RUNBOOK) will tell us more than more code tonight.
+- The rules mention current/torque and depth data, but the Wall-X protocol
+  doesn't carry them. The Demo 2 proposal leans on current feedback.
+- The organizer email covers: replacing Wall-X output, who ends runs,
+  current/torque access, holder approval, hold-still reply format.
+- The X Square fireside chat is Friday 4 PM at the venue: a chance to ask
+  in person.
+- Keys (Wall-X, Groq) stay in environment variables, never in the repo.
+
+---
+
+## How it works
 It sits between the organizers' robot client and Wall-X, decides what the
 robot should do next, checks every action chunk, knows when the task is
 done, and keeps the arms still when it is. It includes a **fake robot**, a
