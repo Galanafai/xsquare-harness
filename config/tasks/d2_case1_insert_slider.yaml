@@ -7,6 +7,12 @@
 # every request and the supervisor uses it to pick this file.
 #
 # Colors come from xharness/parts.py. Change them here if your prints differ.
+#
+# Stage pattern for every press (changed 2026-11-12): the gripper covers the
+# hole while it presses, so "seated?" cannot be judged then. Each part goes
+#   grasp -> align -> push (contact check) -> release (open and lift)
+#   -> seated (a `hold: true` stage: arms stay still, vision looks at the hole).
+# Confirmations: 1 for grasp, align and release, 2 for push and seated.
 
 task_id: d2_case1_insert_slider
 goal: "Insert the orange slider into the white handle."
@@ -21,7 +27,7 @@ stages:
       - "Grasp the orange block and lift it."
     done:
       question: "Is the orange slider held between one gripper's fingers and lifted off the table?"
-      confirmations: 2
+      confirmations: 1
     budget_requests: 12
     max_retries: 2
 
@@ -31,28 +37,37 @@ stages:
       - "Hold the orange slider just above the slot in the white handle."
     done:
       question: "Is the orange slider directly above the white handle's slot and close to it (within about 3 cm)?"
-      confirmations: 2
+      confirmations: 1
       require_still: true
     budget_requests: 10
     max_retries: 2
 
-  - id: insert_slider
+  - id: push_slider
     instructions:
       - "Insert the orange slider into the white handle."
       - "Push the orange slider down into the handle slot."
     done:
-      question: "Is the orange slider seated inside the white handle's slot (not resting on top, not tilted out)?"
+      question: "Is the orange slider pushed down onto the white handle, touching it with no visible gap between them?"
       confirmations: 2
       require_still: true
     budget_requests: 12
     max_retries: 2
 
-  - id: release_retract
+  - id: release_slider
     instructions:
       - "Release the orange slider and move the arm up and away."
+      - "Open the gripper and lift the arm straight up."
     done:
-      question: "Are both grippers open and clear of the toy, with the slider still seated in the handle?"
+      question: "Is the gripper open and lifted clear above the toy, no longer touching the slider?"
       confirmations: 1
     budget_requests: 6
     max_retries: 1
     optional: true
+
+  - id: seated_slider
+    done:
+      question: "Is the orange slider seated inside the white handle's slot (not resting on top, not tilted out)?"
+      confirmations: 2
+    budget_requests: 6
+    max_retries: 1
+    hold: true

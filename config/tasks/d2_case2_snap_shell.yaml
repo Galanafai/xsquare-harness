@@ -1,5 +1,11 @@
 # Demo 2, A-board case 2: snap the outer shell onto the handle + slider.
 # Start: handle with slider fitted (in the holder), loose green shell.
+#
+# Stage pattern for every press (changed 2026-11-12): the gripper covers the
+# hole while it presses, so "seated?" cannot be judged then. Each part goes
+#   grasp -> align -> push (contact check) -> release (open and lift)
+#   -> seated (a `hold: true` stage: arms stay still, vision looks at the hole).
+# Confirmations: 1 for grasp, align and release, 2 for push and seated.
 
 task_id: d2_case2_snap_shell
 goal: "Snap the green shell onto the toy."
@@ -12,10 +18,10 @@ stages:
   - id: grasp_shell
     instructions:
       - "Pick up the green shell."
-      - "Grasp the green part and lift it."
+      - "Grasp the green shell and lift it."
     done:
       question: "Is the green shell held between one gripper's fingers and lifted off the table?"
-      confirmations: 2
+      confirmations: 1
     budget_requests: 12
     max_retries: 2
 
@@ -25,28 +31,37 @@ stages:
       - "Hold the green shell just above the toy in the holder, lined up with it."
     done:
       question: "Is the green shell directly above the toy in the holder, lined up lengthwise, within about 3 cm?"
-      confirmations: 2
+      confirmations: 1
       require_still: true
     budget_requests: 10
     max_retries: 2
 
-  - id: press_shell
+  - id: push_shell
     instructions:
       - "Press the green shell down onto the white handle."
       - "Push the green shell down until it snaps onto the toy."
     done:
-      question: "Is the green shell sitting flat on the white handle with no gap, fully snapped on?"
+      question: "Is the green shell pushed down onto the white handle, touching it with no visible gap between them?"
       confirmations: 2
       require_still: true
     budget_requests: 12
     max_retries: 2
 
-  - id: release_retract
+  - id: release_shell
     instructions:
       - "Release the green shell and move the arm up and away."
+      - "Open the gripper and lift the arm straight up."
     done:
-      question: "Are both grippers open and clear of the toy, with the shell still on the handle?"
+      question: "Is the gripper open and lifted clear above the toy, no longer touching the shell?"
       confirmations: 1
     budget_requests: 6
     max_retries: 1
     optional: true
+
+  - id: seated_shell
+    done:
+      question: "Is the green shell sitting flat on the white handle with no gap, fully snapped on?"
+      confirmations: 2
+    budget_requests: 6
+    max_retries: 1
+    hold: true

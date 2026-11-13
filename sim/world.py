@@ -271,15 +271,25 @@ class World:
 STAGE_TRUTH = {
     "grasp_slider": lambda w: w.is_held("slider"),
     "align_slider": lambda w: w.held_above("slider", ["handle_slot"], 0.03),
-    "insert_slider": lambda w: w.seated("slider"),
+    # push_*: the sim seats a part the moment a press lands inside the slot
+    # tolerance, so "pushed down onto it" is true exactly when it is seated.
+    # (Real push questions are looser: contact, no gap, hole hidden by the gripper.)
+    "push_slider": lambda w: w.seated("slider"),
+    "release_slider": lambda w: w.arms_clear(),
+    "seated_slider": lambda w: w.seated("slider"),
     "grasp_shell": lambda w: w.is_held("shell"),
     "align_shell": lambda w: w.held_above("shell", ["shell_seat"], 0.03),
-    "press_shell": lambda w: w.seated("shell"),
+    "push_shell": lambda w: w.seated("shell"),
+    "release_shell": lambda w: w.arms_clear(),
+    "seated_shell": lambda w: w.seated("shell"),
     "grasp_teal": lambda w: w.is_held("button_a"),
     "align_teal": lambda w: w.held_above("button_a", ["hole_a", "hole_b"], 0.02),
-    "press_teal": lambda w: w.seated("button_a"),
+    "push_teal": lambda w: w.seated("button_a"),
+    "release_teal": lambda w: w.arms_clear(),
+    "seated_teal": lambda w: w.seated("button_a"),
     "grasp_purple": lambda w: w.is_held("button_b"),
     "align_purple": lambda w: w.held_above("button_b", ["hole_a", "hole_b"], 0.02),
-    "press_purple": lambda w: w.seated("button_a") and w.seated("button_b"),
-    "release_retract": lambda w: w.arms_clear(),
+    "push_purple": lambda w: w.seated("button_b"),
+    "release_purple": lambda w: w.arms_clear(),
+    "seated_both": lambda w: w.seated("button_a") and w.seated("button_b"),
 }

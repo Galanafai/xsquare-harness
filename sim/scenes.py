@@ -127,8 +127,8 @@ def _part_stage_scenes(task_id, case, part, slot_name, ids, arm_pair, radius, se
     return out
 
 
-def _release_scenes(task_id, case, last_part, arm_pair, seated_before=()):
-    """release_retract: arms open and away, the final part still seated."""
+def _release_scenes(task_id, case, stage_id, last_part, arm_pair, seated_before=()):
+    """release_*: gripper open and lifted clear of the toy (the question no longer mentions seating)."""
     out: list[Scene] = []
 
     def fresh(seed):
@@ -139,14 +139,12 @@ def _release_scenes(task_id, case, last_part, arm_pair, seated_before=()):
         w._seat(last_part, w.free_slot_for(last_part).name)
         if i:
             w.arms[arm].pos = w.arms[arm].pos + [0.05, 0.1, 0.1]
-        out.append(Scene("release_retract", task_id, "yes", f"yes_open_clear_{arm[:1]}", w))
+        out.append(Scene(stage_id, task_id, "yes", f"yes_open_clear_{arm[:1]}", w))
     # Hard: gripper still closed on the part, resting on its slot.
     w = fresh(33)
     slot = w.free_slot_for(last_part)
     _hold(w, arm_pair[0], last_part, slot.xy, slot.seat_z + 0.012)
-    out.append(Scene("release_retract", task_id, "no", "hard_still_holding_part", w))
-    # Hard: arms open, but the part was dropped on the table instead of seated.
-    out.append(Scene("release_retract", task_id, "no", "hard_part_left_on_table", fresh(34)))
+    out.append(Scene(stage_id, task_id, "no", "hard_still_holding_part", w))
     return out
 
 
@@ -154,16 +152,16 @@ def all_scenes() -> list[Scene]:
     """Scenes for every stage of the three Demo 2 cases."""
     s: list[Scene] = []
     s += _part_stage_scenes("d2_case1_insert_slider", 1, "slider", "handle_slot",
-                            ("grasp_slider", "align_slider", "insert_slider"), ("left_ee", "right_ee"), 0.03)
-    s += _release_scenes("d2_case1_insert_slider", 1, "slider", ("left_ee", "right_ee"))
+                            ("grasp_slider", "align_slider", "seated_slider"), ("left_ee", "right_ee"), 0.03)
+    s += _release_scenes("d2_case1_insert_slider", 1, "release_slider", "slider", ("left_ee", "right_ee"))
     s += _part_stage_scenes("d2_case2_snap_shell", 2, "shell", "shell_seat",
-                            ("grasp_shell", "align_shell", "press_shell"), ("left_ee", "right_ee"), 0.03, seed0=100)
-    s += _release_scenes("d2_case2_snap_shell", 2, "shell", ("left_ee", "right_ee"))
+                            ("grasp_shell", "align_shell", "seated_shell"), ("left_ee", "right_ee"), 0.03, seed0=100)
+    s += _release_scenes("d2_case2_snap_shell", 2, "release_shell", "shell", ("left_ee", "right_ee"))
     s += _part_stage_scenes("d2_case3_press_buttons", 3, "button_a", "hole_a",
-                            ("grasp_teal", "align_teal", "press_teal"), ("right_ee", "left_ee"), 0.02, seed0=200)
+                            ("grasp_teal", "align_teal", "seated_teal"), ("right_ee", "left_ee"), 0.02, seed0=200)
     s += _part_stage_scenes("d2_case3_press_buttons", 3, "button_b", "hole_b",
-                            ("grasp_purple", "align_purple", "press_purple"), ("right_ee", "left_ee"), 0.02,
+                            ("grasp_purple", "align_purple", "seated_both"), ("right_ee", "left_ee"), 0.02,
                             seated_first=("button_a",), seed0=300)
-    s += _release_scenes("d2_case3_press_buttons", 3, "button_b", ("right_ee", "left_ee"),
+    s += _release_scenes("d2_case3_press_buttons", 3, "release_purple", "button_b", ("right_ee", "left_ee"),
                         seated_before=("button_a",))
     return s

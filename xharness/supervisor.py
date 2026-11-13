@@ -109,7 +109,7 @@ class Supervisor:
         events: list[dict] = []
 
         # 1) Is the current stage done?
-        if self._should_verify(run):
+        if self._should_verify(run, stage):
             verdict, gripper_ok, still_ok = await self._check_done(task, stage, request, state, goal, still)
             events.append(
                 {
@@ -158,7 +158,12 @@ class Supervisor:
                     self._save()
                     return Decision(HOLD, stage_id=stage.id, reason="retries exhausted", events=events)
 
-        # 3) Act: send the current stage's instruction to Wall-X.
+        # 3) A checking stage keeps the arms still while we look.
+        if stage.hold:
+            self._save()
+            return Decision(HOLD, stage_id=stage.id, reason=f"checking {stage.id}, arms held still", events=events)
+
+        # 4) Act: send the current stage's instruction to Wall-X.
         instruction = stage.instructions[run.attempt % len(stage.instructions)]
         self._save()
         return Decision(
@@ -188,7 +193,9 @@ class Supervisor:
                 return task
         raise KeyError(task_id)
 
-    def _should_verify(self, run: RunState) -> bool:
+    def _should_verify(self, run: RunState, stage: Stage) -> bool:
+        if stage.hold:
+            return True  # no Wall-X call to wait for: look at every request
         return run.requests_in_attempt % max(1, self.cfg.verify_every) == 0
 
     def _advance(self, run: RunState, task: Task, result: str) -> bool:

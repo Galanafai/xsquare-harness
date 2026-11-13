@@ -93,3 +93,13 @@ def test_prewarm_failure_is_swallowed():
     relay = Relay(cfg, Supervisor([], cfg.supervisor, Verifier(cfg.verifier)), verbose=False)
     result = asyncio.run(relay.prewarm())
     assert result["ok"] is False and "error" in result
+
+
+def test_all_three_cases_finish_done_with_the_press_release_seated_pattern():
+    for case in (2, 3):  # case 1 is covered above
+        r = run(case=case, max_requests=200)
+        assert r["task_status"] == "done", case
+        assert no_false_positives(r), case
+        stages = [row["stage"] for row in r["stages"]]
+        assert any(s.startswith("seated_") for s in stages), case
+        assert all(row["supervisor"] == "done" for row in r["stages"]), case

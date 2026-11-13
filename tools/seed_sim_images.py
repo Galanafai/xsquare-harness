@@ -4,8 +4,9 @@ Layout (the same one real phone photos use):
 
     images/<stage_id>/{yes,no}/<sample>/{front,left_wrist,right_wrist}.jpg
 
-`release_retract` exists in all three cases with different questions, so its
-folders are named <task_id>.release_retract instead.
+Stage ids are unique across the Demo 2 cases, so folder = stage id.
+NOTE: release_* questions no longer mention the seated part, and push_* has no
+scenes yet (only grasp, align, release and seated are seeded).
 Sample names starting with hard_ are hard negatives.
 
     python tools/seed_sim_images.py [--out images] [--clean]
@@ -28,7 +29,7 @@ from sim.world import STAGE_TRUTH  # noqa: E402
 
 
 def folder_name(scene: Scene) -> str:
-    return f"{scene.task_id}.{scene.stage}" if scene.stage == "release_retract" else scene.stage
+    return scene.stage
 
 
 def truth_conflicts(scenes: list[Scene]) -> list[str]:
@@ -36,8 +37,8 @@ def truth_conflicts(scenes: list[Scene]) -> list[str]:
     bad = []
     for sc in scenes:
         truth = STAGE_TRUTH.get(sc.stage)
-        if sc.stage == "release_retract" or truth is None:
-            continue  # release questions also mention the seated part; checked by hand
+        if truth is None:
+            continue
         if truth(sc.world) != (sc.label == "yes"):
             bad.append(f"{sc.task_id}/{sc.stage}/{sc.name}: labeled {sc.label}, sim truth {truth(sc.world)}")
     return bad

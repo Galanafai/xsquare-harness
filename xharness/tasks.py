@@ -64,6 +64,10 @@ class Stage:
     max_retries: int = 2
     # If true and retries are exhausted, move on instead of failing the task.
     optional: bool = False
+    # A pure checking stage: the relay answers HOLD (arms stay still, Wall-X is
+    # not called) while the vision model is asked the done question on every
+    # request. Used to look at the result once the gripper is out of the way.
+    hold: bool = False
 
 
 @dataclass
@@ -90,8 +94,9 @@ def load_task(path: str | Path) -> Task:
     stages = []
     for raw in data["stages"]:
         done = DoneCheck(**raw.pop("done"))
+        raw.setdefault("instructions", [])  # hold stages have none
         stage = Stage(done=done, **raw)
-        if not stage.instructions:
+        if not stage.instructions and not stage.hold:
             raise ValueError(f"{path}: stage {stage.id} has no instructions")
         if stage.active_arm not in (None, *ARMS):
             raise ValueError(f"{path}: stage {stage.id} active_arm must be left_ee or right_ee")

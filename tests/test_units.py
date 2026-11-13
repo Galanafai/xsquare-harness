@@ -352,3 +352,45 @@ def test_every_task_yaml_loads_and_webui_instructions_match_goals():
         assert len(cases) == len(tasks[demo])
         for case in cases:
             assert sum(t.matches(case["instruction"]) for t in tasks[demo]) == 1, case["instruction"]
+
+
+def test_hold_stage_keeps_arms_still_and_verifies_every_request(tmp_path):
+    """A `hold: true` stage answers HOLD (no Wall-X call) and asks vision on every request."""
+    task = Task(
+        task_id="t2",
+        goal="g",
+        stages=[
+            Stage("check", [], DoneCheck("seated?", confirmations=2), budget_requests=6, max_retries=0, hold=True),
+        ],
+    )
+    verifier = ScriptedVerifier(["no", "yes", "yes"])
+    sup = Supervisor([task], SupervisorConfig(verify_every=5, state_file=str(tmp_path / "s.json")), verifier)
+    req = make_request(goal="g")
+    st = read_state(req)
+    first = run(sup.decide(req, st))
+    assert first.kind == HOLD and first.stage_id == "check" and verifier.calls == 1  # verify_every ignored
+    run(sup.decide(req, st))
+    done = run(sup.decide(req, st))  # second consecutive yes completes the task
+    assert done.reason == "task complete" and verifier.calls == 3
+
+
+def test_press_tasks_check_seating_only_after_release_in_a_hold_stage():
+    """The gripper covers the hole while pressing, so every press ends push -> release -> seated check."""
+    import glob
+
+    from xharness.tasks import load_task
+
+    for path in glob.glob("config/tasks/d2_*.yaml"):
+        task = load_task(path)
+        ids = [s.id for s in task.stages]
+        pushes = [i for i in ids if i.startswith("push_")]
+        assert pushes, path
+        for push in pushes:
+            part = push.removeprefix("push_")
+            nxt = task.stages[ids.index(push) + 1 : ids.index(push) + 3]
+            assert nxt[0].id == f"release_{part}" and nxt[0].optional, path
+            assert nxt[1].id.startswith("seated_") and nxt[1].hold and nxt[1].done.confirmations == 2, path
+        for s in task.stages:
+            if s.id.startswith(("grasp_", "align_", "release_")):
+                assert s.done.confirmations == 1, s.id
+            assert not (s.id.startswith("push_") and "seated" in s.done.question.lower()), s.id

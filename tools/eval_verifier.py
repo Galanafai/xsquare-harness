@@ -4,8 +4,7 @@ Runs every stage question from config/tasks/*.yaml against labeled images:
 
     images/<stage_id>/{yes,no}/<sample>/{front,left_wrist,right_wrist}.jpg
 
-(`release_retract` is in every case with a different question, so its folders
-are images/<task_id>.release_retract/...). Sample names starting with "hard_"
+(if two cases ever share a stage id, name the folder <task_id>.<stage_id>). Sample names starting with "hard_"
 are hard negatives. Make sim images with tools/seed_sim_images.py; real phone
 photos use the same layout.
 
